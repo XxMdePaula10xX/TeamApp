@@ -39,4 +39,22 @@
   .card {
     @apply rounded-xl border border-slate-200 bg-white p-4 shadow-sm;
   }
+
+  .label {
+    @apply mb-1 block text-sm font-medium text-slate-700;
+  }
+
+  .input {
+    @apply w-full rounded-lg border border-slate-300 px-3 py-2 text-sm
+      focus:border-pitch-500 focus:outline-none focus:ring-1 focus:ring-pitch-500
+      disabled:cursor-not-allowed disabled:bg-slate-100;
+  }
+
+  .select {
+    @apply input bg-white;
+  }
+
+  .btn-danger {
+    @apply btn bg-red-600 text-white hover:bg-red-700;
+  }
 }

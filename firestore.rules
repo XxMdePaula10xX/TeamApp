@@ -4,58 +4,89 @@ rules_version = '2';
 // Regras de segurança — Pelada Manager
 //
 // Modelo: leitura PÚBLICA (qualquer um vê estatísticas), escrita
-// restrita ao DONO do time (ownerId). `ownerId` é imutável após
-// a criação.
+// restrita ao DONO. A autorização das subcoleções usa `ownerId`
+// DESNORMALIZADO em cada doc (igualdade), e NÃO um get() no time-pai:
+// get() não roda offline e custa uma leitura por operação — quebraria
+// o requisito de lançar placar sem sinal. `ownerId` é imutável.
+//
+// IMPORTANTE: cada nova subcoleção precisa do seu próprio bloco abaixo;
+// caminhos sem `allow` são negados por padrão.
 // ─────────────────────────────────────────────────────────────
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper: usuário autenticado é o dono do time pai.
-    function isTeamOwner(teamId) {
-      return request.auth != null
-        && get(/databases/$(database)/documents/teams/$(teamId)).data.ownerId == request.auth.uid;
+    function signedIn() {
+      return request.auth != null;
+    }
+    // Cria declarando-se dono.
+    function ownsNew() {
+      return signedIn() && request.resource.data.ownerId == request.auth.uid;
+    }
+    // É dono do doc existente.
+    function ownsExisting() {
+      return signedIn() && resource.data.ownerId == request.auth.uid;
+    }
+    // ownerId não muda no update.
+    function ownerImmutable() {
+      return request.resource.data.ownerId == resource.data.ownerId;
+    }
+
+    function validGameWrite() {
+      let d = request.resource.data;
+      return d.scoreFor is int && d.scoreFor >= 0
+        && d.scoreAgainst is int && d.scoreAgainst >= 0
+        && d.type in ['AMISTOSO', 'CAMPEONATO']
+        && d.result in ['VITORIA', 'EMPATE', 'DERROTA']
+        && d.presentPlayerIds is list
+        && d.events is list;
     }
 
     // ── users ──────────────────────────────────────────────
-    // Cada usuário lê/escreve apenas o próprio documento.
     match /users/{userId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
-      allow create: if request.auth != null
-        && request.auth.uid == userId
-        && request.resource.data.email == request.auth.token.email;
-      allow update, delete: if request.auth != null && request.auth.uid == userId;
+      allow read: if signedIn() && request.auth.uid == userId;
+      // Tolera provedores sem e-mail; quando há e-mail, exige bater com o token.
+      allow create: if signedIn() && request.auth.uid == userId
+        && (request.auth.token.email == null
+            || request.resource.data.email == request.auth.token.email);
+      allow update: if signedIn() && request.auth.uid == userId;
+      // delete: negado.
     }
 
     // ── teams ──────────────────────────────────────────────
     match /teams/{teamId} {
-      // Leitura pública (busca + modo leitura para anônimos).
       allow read: if true;
+      allow create: if ownsNew()
+        && request.resource.data.name is string
+        && request.resource.data.normalizedName is string;
+      allow update: if ownsExisting() && ownerImmutable();
+      allow delete: if ownsExisting();
 
-      // Só cria quem se declara dono.
-      allow create: if request.auth != null
-        && request.resource.data.ownerId == request.auth.uid;
-
-      // Atualiza/exclui apenas o dono; ownerId é imutável.
-      allow update: if request.auth != null
-        && resource.data.ownerId == request.auth.uid
-        && request.resource.data.ownerId == resource.data.ownerId;
-      allow delete: if request.auth != null
-        && resource.data.ownerId == request.auth.uid;
-
-      // Subcoleções herdam: leitura pública, escrita só do dono.
+      // ── players ──
+      // INVARIANTE: a UI nunca faz hard-delete de jogador (usa
+      // active=false), pois jogos referenciam playerIds e o doc é
+      // necessário para reverter agregados/recalcular. O `delete` é
+      // permitido ao dono apenas para o cascade de exclusão do time.
       match /players/{playerId} {
         allow read: if true;
-        allow write: if isTeamOwner(teamId);
+        allow create: if ownsNew();
+        allow update: if ownsExisting() && ownerImmutable();
+        allow delete: if ownsExisting();
       }
 
       match /games/{gameId} {
         allow read: if true;
-        allow write: if isTeamOwner(teamId);
+        allow create: if ownsNew() && validGameWrite();
+        allow update: if ownsExisting() && ownerImmutable() && validGameWrite();
+        allow delete: if ownsExisting();
       }
 
       match /competitions/{competitionId} {
         allow read: if true;
-        allow write: if isTeamOwner(teamId);
+        allow create: if ownsNew()
+          && request.resource.data.name is string
+          && request.resource.data.normalizedName is string;
+        allow update: if ownsExisting() && ownerImmutable();
+        allow delete: if ownsExisting();
       }
     }
   }

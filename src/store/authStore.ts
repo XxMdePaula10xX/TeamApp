@@ -15,6 +15,7 @@ import {
   type User,
 } from 'firebase/auth'
 import { auth, googleProvider } from '@/lib/firebase'
+import { ensureUserDoc } from '@/services/users'
 
 interface AuthState {
   user: User | null
@@ -46,5 +47,11 @@ export const useAuthStore = create<AuthState>(() => ({
 export function initAuthListener(): () => void {
   return onAuthStateChanged(auth, (user) => {
     useAuthStore.setState({ user, initializing: false })
+    // Garante o doc users/{uid} no primeiro login (fire-and-forget).
+    if (user) {
+      void ensureUserDoc(user).catch((err) => {
+        console.warn('[Pelada Manager] Falha ao criar/atualizar o doc do usuário:', err)
+      })
+    }
   })
 }

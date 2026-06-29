@@ -1,11 +1,15 @@
 /**
  * Cálculo de agregados — funções puras (PRD §9).
  *
- * Estas funções NÃO tocam o Firestore: recebem dados simples e
- * devolvem deltas/resultados. No Sprint 1 elas serão chamadas dentro
- * de uma transação que aplica os deltas em `team.stats` e
- * `player.stats`. A chave para edição/exclusão sem inconsistência é:
- * REVERTER a contribuição antiga (sinal -1) e REAPLICAR a nova (+1).
+ * Estas funções NÃO tocam o Firestore: recebem dados simples e devolvem
+ * deltas/resultados. O caminho de gravação (services/games.ts) converte
+ * estes deltas em `writeBatch` + `FieldValue.increment()` (atômico e
+ * offline-safe). Para edição/exclusão, usa-se `diffTeamDelta` /
+ * `diffPlayerDeltas` (líquido novo − velho) sobre a UNIÃO dos jogadores.
+ *
+ * `applyTeamStats` / `applyPlayerStats` são read-modify-write e ficam
+ * RESERVADAS ao recálculo total (`recomputeTeamStats`) — NUNCA usar no
+ * caminho de increment.
  */
 import {
   EMPTY_PLAYER_STATS,
@@ -37,6 +41,26 @@ export interface GameStatsInput {
 /** Quantos gols já têm autor atribuído (tipo GOL com playerId). */
 export function countAttributedGoals(events: GameEvent[]): number {
   return events.filter((e) => e.type === 'GOL' && e.playerId !== null).length
+}
+
+/** Ids de jogadores citados nos eventos (autores de gol + assistentes). */
+export function collectEventPlayerIds(events: GameEvent[]): string[] {
+  const ids = new Set<string>()
+  for (const e of events) {
+    if (e.type === 'GOL' && e.playerId) ids.add(e.playerId)
+    if (e.assistPlayerId) ids.add(e.assistPlayerId)
+  }
+  return [...ids]
+}
+
+/**
+ * Presença EFETIVA: união da presença marcada com todos os jogadores
+ * citados em eventos. Garante que um autor/assistente nunca fique com
+ * goals/assists > 0 e gamesPlayed = 0. É esta lista que deve ser
+ * persistida em `presentPlayerIds`.
+ */
+export function effectivePresence(input: GameStatsInput): string[] {
+  return [...new Set([...input.presentPlayerIds, ...collectEventPlayerIds(input.events)])]
 }
 
 /**
@@ -77,11 +101,10 @@ export function teamDelta(input: GameStatsInput): TeamStats {
 
 /**
  * Delta por jogador (goals/assists/gamesPlayed) que um jogo aplica.
- * - `gamesPlayed`: cada id em `presentPlayerIds`.
+ * - `gamesPlayed`: cada id da PRESENÇA EFETIVA (presença ∪ citados).
  * - `goals`: eventos GOL com `playerId`.
- * - `assists`: `assistPlayerId` de qualquer evento, mais `playerId`
- *   de eventos do tipo ASSIST (não usado no fluxo de cadastro do MVP,
- *   mas suportado para robustez).
+ * - `assists`: SOMENTE `assistPlayerId` (representação canônica do MVP —
+ *   evita o double-count entre evento ASSIST e assistPlayerId).
  */
 export function playerDeltas(input: GameStatsInput): Map<string, PlayerStats> {
   const deltas = new Map<string, PlayerStats>()
@@ -92,18 +115,78 @@ export function playerDeltas(input: GameStatsInput): Map<string, PlayerStats> {
     deltas.set(playerId, current)
   }
 
-  for (const id of input.presentPlayerIds) bump(id, 'gamesPlayed')
+  for (const id of effectivePresence(input)) bump(id, 'gamesPlayed')
 
   for (const event of input.events) {
     if (event.type === 'GOL' && event.playerId) bump(event.playerId, 'goals')
-    if (event.type === 'ASSIST' && event.playerId) bump(event.playerId, 'assists')
     if (event.assistPlayerId) bump(event.assistPlayerId, 'assists')
   }
 
   return deltas
 }
 
-// ── Aplicação/reversão de deltas ─────────────────────────────
+// ── Diffs para edição/exclusão (líquido novo − velho) ────────
+
+const subtractTeam = (a: TeamStats, b: TeamStats): TeamStats => ({
+  played: a.played - b.played,
+  wins: a.wins - b.wins,
+  draws: a.draws - b.draws,
+  losses: a.losses - b.losses,
+  goalsFor: a.goalsFor - b.goalsFor,
+  goalsAgainst: a.goalsAgainst - b.goalsAgainst,
+})
+
+const subtractPlayer = (a: PlayerStats, b: PlayerStats): PlayerStats => ({
+  goals: a.goals - b.goals,
+  assists: a.assists - b.assists,
+  gamesPlayed: a.gamesPlayed - b.gamesPlayed,
+  yellowCards: a.yellowCards - b.yellowCards,
+  redCards: a.redCards - b.redCards,
+})
+
+const isZeroPlayer = (s: PlayerStats): boolean =>
+  s.goals === 0 && s.assists === 0 && s.gamesPlayed === 0 && s.yellowCards === 0 && s.redCards === 0
+
+/** Delta líquido do time ao trocar um jogo antigo por um novo. */
+export function diffTeamDelta(oldInput: GameStatsInput, newInput: GameStatsInput): TeamStats {
+  return subtractTeam(teamDelta(newInput), teamDelta(oldInput))
+}
+
+/**
+ * Delta líquido por jogador ao editar um jogo, sobre a UNIÃO dos ids
+ * (quem saiu recebe increment negativo). Entradas totalmente zeradas
+ * são omitidas para não tocar jogadores não-afetados.
+ */
+export function diffPlayerDeltas(
+  oldInput: GameStatsInput,
+  newInput: GameStatsInput,
+): Map<string, PlayerStats> {
+  const oldMap = playerDeltas(oldInput)
+  const newMap = playerDeltas(newInput)
+  const ids = new Set([...oldMap.keys(), ...newMap.keys()])
+  const result = new Map<string, PlayerStats>()
+  for (const id of ids) {
+    const net = subtractPlayer(
+      newMap.get(id) ?? EMPTY_PLAYER_STATS,
+      oldMap.get(id) ?? EMPTY_PLAYER_STATS,
+    )
+    if (!isZeroPlayer(net)) result.set(id, net)
+  }
+  return result
+}
+
+/** Delta de reversão (sinal negativo) de um jogo — usado na exclusão. */
+export function negateTeam(delta: TeamStats): TeamStats {
+  return subtractTeam(EMPTY_TEAM_STATS, delta)
+}
+
+export function negatePlayerDeltas(map: Map<string, PlayerStats>): Map<string, PlayerStats> {
+  const out = new Map<string, PlayerStats>()
+  for (const [id, s] of map) out.set(id, subtractPlayer(EMPTY_PLAYER_STATS, s))
+  return out
+}
+
+// ── Recálculo total (read-modify-write; fora do caminho increment) ──
 
 /** Soma `delta * sign` em cada campo de um TeamStats. `sign` é +1 ou -1. */
 export function applyTeamStats(base: TeamStats, delta: TeamStats, sign: 1 | -1): TeamStats {
@@ -128,7 +211,29 @@ export function applyPlayerStats(base: PlayerStats, delta: PlayerStats, sign: 1 
   }
 }
 
-// ── Derivados de leitura ─────────────────────────────────────
+// ── Derivados/sanitização de LEITURA (clamp aqui, nunca na escrita) ──
+
+/** Clampa stats do time para exibição (defesa contra drift do denormalizado). */
+export function clampTeamStats(stats: TeamStats): TeamStats {
+  return {
+    played: Math.max(0, stats.played),
+    wins: Math.max(0, stats.wins),
+    draws: Math.max(0, stats.draws),
+    losses: Math.max(0, stats.losses),
+    goalsFor: Math.max(0, stats.goalsFor),
+    goalsAgainst: Math.max(0, stats.goalsAgainst),
+  }
+}
+
+export function clampPlayerStats(stats: PlayerStats): PlayerStats {
+  return {
+    goals: Math.max(0, stats.goals),
+    assists: Math.max(0, stats.assists),
+    gamesPlayed: Math.max(0, stats.gamesPlayed),
+    yellowCards: Math.max(0, stats.yellowCards),
+    redCards: Math.max(0, stats.redCards),
+  }
+}
 
 export function goalDifference(stats: TeamStats): number {
   return stats.goalsFor - stats.goalsAgainst
@@ -136,9 +241,10 @@ export function goalDifference(stats: TeamStats): number {
 
 /** Aproveitamento em % (3 pts vitória, 1 empate) sobre o total possível. */
 export function winPercentage(stats: TeamStats): number {
-  if (stats.played === 0) return 0
-  const points = stats.wins * 3 + stats.draws
-  return Math.round((points / (stats.played * 3)) * 100)
+  const played = Math.max(0, stats.played)
+  if (played <= 0) return 0
+  const points = Math.max(0, stats.wins * 3 + stats.draws)
+  return Math.min(100, Math.round((points / (played * 3)) * 100))
 }
 
 export { EMPTY_TEAM_STATS, EMPTY_PLAYER_STATS }

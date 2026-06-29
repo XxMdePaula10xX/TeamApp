@@ -107,17 +107,31 @@ export interface PlayerDoc {
   preferredFoot: PreferredFoot
   joinedAt: Timestamp | null
   active: boolean
+  /**
+   * `ownerId` é DESNORMALIZADO nos docs de subcoleção para que as regras
+   * de segurança autorizem a escrita por igualdade (resource.data.ownerId
+   * == auth.uid) em vez de um get() no time-pai — get() não funciona
+   * offline e custa uma leitura por operação. Imutável após criação.
+   */
+  ownerId: string
   stats: PlayerStats
 }
 
 export interface CompetitionDoc {
   name: string
+  /** lowercase sem acento — usado para dedupe ('Brasileirão' vs 'brasileirao'). */
+  normalizedName: string
+  ownerId: string
   createdAt: Timestamp
 }
 
 /**
  * Evento de um jogo. `playerId: null` representa gol contra/não-atribuído,
  * usado para fechar o placar sem obrigar a nomear o autor (PRD §6).
+ *
+ * Representação CANÔNICA de assistência (MVP): apenas `assistPlayerId` em
+ * eventos do tipo GOL. Eventos do tipo ASSIST não são usados (evita
+ * double-count). `type` permanece para evolução futura (cartões etc.).
  */
 export interface GameEvent {
   type: GameEventType
@@ -138,6 +152,8 @@ export interface GameDoc {
   result: GameResult
   presentPlayerIds: string[]
   events: GameEvent[]
+  /** Desnormalizado para autorização offline-safe (ver PlayerDoc.ownerId). */
+  ownerId: string
   createdAt: Timestamp
 }
 
