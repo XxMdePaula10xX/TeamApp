@@ -20,6 +20,8 @@ export function OverviewTab() {
   const { games } = useGames(team.id)
   const s = clampTeamStats(team.stats)
   const diff = goalDifference(s)
+  // A curva só cobre os jogos carregados; sinaliza quando há mais que isso.
+  const windowed = !!games && s.played > games.length
 
   // Pontos acumulados por jogo (ordem cronológica crescente).
   const evolution = useMemo<EvolutionPoint[]>(() => {
@@ -80,7 +82,12 @@ export function OverviewTab() {
 
       {evolution.length >= 2 && (
         <div className="card">
-          <h3 className="mb-2 text-sm font-semibold text-slate-700">Evolução de pontos</h3>
+          <h3 className="mb-2 text-sm font-semibold text-slate-700">
+            Evolução de pontos
+            {windowed && (
+              <span className="font-normal text-slate-400"> (últimos {evolution.length} jogos)</span>
+            )}
+          </h3>
           <Suspense fallback={<ChartFallback />}>
             <PointsEvolution data={evolution} />
           </Suspense>

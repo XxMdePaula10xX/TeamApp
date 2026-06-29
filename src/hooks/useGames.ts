@@ -5,7 +5,7 @@ import type { GameDoc } from '@/types/models'
 import { gameRef, gamesCol } from '@/services/paths'
 import { useDocData, useQueryData } from './useFirestore'
 
-const GAMES_LIMIT = 100
+export const GAMES_LIMIT = 100
 
 /**
  * Jogos do time, mais recentes primeiro. `typeFilter` opcional filtra por

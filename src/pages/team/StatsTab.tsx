@@ -1,7 +1,7 @@
 import { lazy, Suspense, useMemo, useState, type ReactNode } from 'react'
 import { useTeamOutlet } from '@/hooks/useTeamOutlet'
 import { usePlayers } from '@/hooks/usePlayers'
-import { useGames } from '@/hooks/useGames'
+import { GAMES_LIMIT, useGames } from '@/hooks/useGames'
 import { Avatar } from '@/components/Avatar'
 import { EmptyState, ErrorState, Loading } from '@/components/states'
 import {
@@ -56,19 +56,27 @@ export function StatsTab() {
   const totalGames =
     filter === 'TODOS' ? clampTeamStats(team.stats).played : (games?.length ?? 0)
 
+  // Desempate por nome (pt-BR) para ordem determinística e justa.
+  const byName = (a: Row, b: Row) => a.player.name.localeCompare(b.player.name, 'pt-BR')
   const scorers = useMemo(
-    () => rows.filter((r) => r.stats.goals > 0).sort((a, b) => b.stats.goals - a.stats.goals),
+    () =>
+      rows
+        .filter((r) => r.stats.goals > 0)
+        .sort((a, b) => b.stats.goals - a.stats.goals || byName(a, b)),
     [rows],
   )
   const assisters = useMemo(
-    () => rows.filter((r) => r.stats.assists > 0).sort((a, b) => b.stats.assists - a.stats.assists),
+    () =>
+      rows
+        .filter((r) => r.stats.assists > 0)
+        .sort((a, b) => b.stats.assists - a.stats.assists || byName(a, b)),
     [rows],
   )
   const attendance = useMemo(
     () =>
       rows
         .filter((r) => r.stats.gamesPlayed > 0)
-        .sort((a, b) => b.stats.gamesPlayed - a.stats.gamesPlayed),
+        .sort((a, b) => b.stats.gamesPlayed - a.stats.gamesPlayed || byName(a, b)),
     [rows],
   )
 
@@ -95,6 +103,13 @@ export function StatsTab() {
         <FilterBtn label="Campeonato" active={filter === 'CAMPEONATO'} onClick={() => setFilter('CAMPEONATO')} />
       </div>
 
+      {filter !== 'TODOS' && (games?.length ?? 0) === GAMES_LIMIT && (
+        <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
+          Mostrando apenas os {GAMES_LIMIT} jogos mais recentes deste tipo — os totais podem ser
+          maiores em “Todos”.
+        </p>
+      )}
+
       {!hasData && (
         <div className="card text-center text-sm text-slate-500">
           Nenhum dado para este filtro ainda.
@@ -111,7 +126,11 @@ export function StatsTab() {
         <Section title="Gols por jogador">
           <Suspense fallback={<ChartFallback />}>
             <PlayerBars
-              data={scorers.slice(0, 10).map((r) => ({ name: firstName(r.player.name), value: r.stats.goals }))}
+              data={scorers.slice(0, 10).map((r) => ({
+                id: r.player.id,
+                name: firstName(r.player.name),
+                value: r.stats.goals,
+              }))}
               color="#16a34a"
             />
           </Suspense>
@@ -129,6 +148,7 @@ export function StatsTab() {
           <Suspense fallback={<ChartFallback />}>
             <PlayerBars
               data={attendance.slice(0, 12).map((r) => ({
+                id: r.player.id,
                 name: firstName(r.player.name),
                 value: r.stats.gamesPlayed,
               }))}
@@ -161,13 +181,16 @@ function RankList({
   unit: string
 }) {
   const top = rows.slice(0, 10)
+  const remaining = rows.length - top.length
   return (
     <ul className="divide-y divide-slate-100">
-      {top.map((r, i) => {
+      {top.map((r) => {
         const value = pick(r.stats)
+        // Ranking de competição: empatados compartilham a mesma posição.
+        const rank = top.findIndex((x) => pick(x.stats) === value) + 1
         return (
           <li key={r.player.id} className="flex items-center gap-3 py-2">
-            <span className="w-5 text-center text-sm font-bold text-slate-400">{i + 1}</span>
+            <span className="w-5 text-center text-sm font-bold text-slate-400">{rank}</span>
             <Avatar src={r.player.photoURL || undefined} name={r.player.name} size={32} />
             <span className="min-w-0 flex-1 truncate text-sm text-slate-800">{r.player.name}</span>
             <span className="text-sm font-bold text-slate-900">
@@ -176,6 +199,11 @@ function RankList({
           </li>
         )
       })}
+      {remaining > 0 && (
+        <li className="py-2 text-center text-xs text-slate-400">
+          +{remaining} jogador{remaining > 1 ? 'es' : ''}
+        </li>
+      )}
     </ul>
   )
 }
