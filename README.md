@@ -109,8 +109,9 @@ nova (ver `src/utils/stats.ts`).
 - [x] **Sprint 0 — Setup**: projeto, Firebase, Capacitor, regras, CI, scaffold.
 - [x] **Sprint 1 — Núcleo**: auth, CRUD de time/jogador/jogo + agregados
       (writeBatch + increment offline-safe, regras por ownerId, soft-delete).
-- [ ] **Sprint 2 — Estatísticas**: visão geral, artilharia, assistências,
-      frequência, filtros.
+- [x] **Sprint 2 — Estatísticas**: visão geral (pizza V/E/D + evolução de
+      pontos), artilharia, assistências, gols por jogador, frequência,
+      filtro amistoso/campeonato. Gráficos (Recharts) carregados via lazy.
 - [ ] **Sprint 3 — Busca e modo público**: busca por nome, página pública,
       deep links.
 - [ ] **Sprint 4 — Viralização e polimento**: cards PNG, empty states,
