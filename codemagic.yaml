@@ -1,0 +1,91 @@
+# ─────────────────────────────────────────────────────────────
+# Codemagic CI/CD — Pelada Manager (Vite + React + Capacitor)
+#
+# Pré-requisitos a configurar no Codemagic:
+#   - Grupo de variáveis `firebase` com as VITE_FIREBASE_* (build web).
+#   - Grupo `google_play` com credenciais de publicação (Android).
+#   - Grupo `appstore` + code signing (iOS).
+# Os workflows abaixo cobrem o "build vazio nas duas lojas" do Sprint 0.
+# ─────────────────────────────────────────────────────────────
+
+definitions:
+  scripts:
+    - &install_deps
+      name: Instalar dependências
+      script: npm ci
+    - &build_web
+      name: Build web (Vite)
+      script: npm run build
+    - &cap_sync
+      name: Capacitor sync
+      script: npx cap sync
+
+workflows:
+  # ── Android ──────────────────────────────────────────────
+  android-build:
+    name: Android Build
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      groups:
+        - firebase
+        - google_play
+      node: 22
+    scripts:
+      - *install_deps
+      - *build_web
+      - name: Adicionar plataforma Android (se ausente)
+        script: |
+          [ -d android ] || npx cap add android
+      - *cap_sync
+      - name: Build do APK/AAB (debug — placeholder do Sprint 0)
+        script: |
+          cd android
+          ./gradlew assembleDebug
+    artifacts:
+      - android/app/build/outputs/**/*.apk
+      - android/app/build/outputs/**/*.aab
+
+  # ── iOS ──────────────────────────────────────────────────
+  ios-build:
+    name: iOS Build
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      groups:
+        - firebase
+        - appstore
+      node: 22
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - *install_deps
+      - *build_web
+      - name: Adicionar plataforma iOS (se ausente)
+        script: |
+          [ -d ios ] || npx cap add ios
+      - *cap_sync
+      - name: Build do app iOS (placeholder do Sprint 0)
+        script: |
+          xcode-project build-ipa \
+            --project "ios/App/App.xcodeproj" \
+            --scheme "App" || echo "Configurar code signing antes do build de release."
+    artifacts:
+      - build/ios/ipa/*.ipa
+
+  # ── Web (deploy estático opcional via Firebase Hosting) ──
+  web-build:
+    name: Web Build
+    instance_type: linux_x2
+    max_build_duration: 30
+    environment:
+      groups:
+        - firebase
+      node: 22
+    scripts:
+      - *install_deps
+      - name: Typecheck
+        script: npm run typecheck
+      - *build_web
+    artifacts:
+      - dist/**

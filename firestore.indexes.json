@@ -1,0 +1,20 @@
+{
+  "indexes": [
+    {
+      "comment": "Jogos por data (lista cronológica na aba Jogos).",
+      "collectionGroup": "games",
+      "queryScope": "COLLECTION",
+      "fields": [{ "fieldPath": "date", "order": "DESCENDING" }]
+    },
+    {
+      "comment": "Filtro de jogos por tipo (amistoso/campeonato) ordenado por data.",
+      "collectionGroup": "games",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "type", "order": "ASCENDING" },
+        { "fieldPath": "date", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

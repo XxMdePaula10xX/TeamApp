@@ -1,0 +1,62 @@
+rules_version = '2';
+
+// ─────────────────────────────────────────────────────────────
+// Regras de segurança — Pelada Manager
+//
+// Modelo: leitura PÚBLICA (qualquer um vê estatísticas), escrita
+// restrita ao DONO do time (ownerId). `ownerId` é imutável após
+// a criação.
+// ─────────────────────────────────────────────────────────────
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: usuário autenticado é o dono do time pai.
+    function isTeamOwner(teamId) {
+      return request.auth != null
+        && get(/databases/$(database)/documents/teams/$(teamId)).data.ownerId == request.auth.uid;
+    }
+
+    // ── users ──────────────────────────────────────────────
+    // Cada usuário lê/escreve apenas o próprio documento.
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.email == request.auth.token.email;
+      allow update, delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ── teams ──────────────────────────────────────────────
+    match /teams/{teamId} {
+      // Leitura pública (busca + modo leitura para anônimos).
+      allow read: if true;
+
+      // Só cria quem se declara dono.
+      allow create: if request.auth != null
+        && request.resource.data.ownerId == request.auth.uid;
+
+      // Atualiza/exclui apenas o dono; ownerId é imutável.
+      allow update: if request.auth != null
+        && resource.data.ownerId == request.auth.uid
+        && request.resource.data.ownerId == resource.data.ownerId;
+      allow delete: if request.auth != null
+        && resource.data.ownerId == request.auth.uid;
+
+      // Subcoleções herdam: leitura pública, escrita só do dono.
+      match /players/{playerId} {
+        allow read: if true;
+        allow write: if isTeamOwner(teamId);
+      }
+
+      match /games/{gameId} {
+        allow read: if true;
+        allow write: if isTeamOwner(teamId);
+      }
+
+      match /competitions/{competitionId} {
+        allow read: if true;
+        allow write: if isTeamOwner(teamId);
+      }
+    }
+  }
+}
