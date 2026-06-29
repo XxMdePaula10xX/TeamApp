@@ -117,6 +117,14 @@ function assertValidGame(input: GameInput, validPlayerIds: Set<string>): void {
 
   const score = validateGameScore({ scoreFor: input.scoreFor, events: input.events })
   if (!score.valid) throw new GameValidationError(score.message ?? 'Placar incoerente.')
+
+  // Projeta o nº de ops do batch (jogo + competição + time + 1 por jogador
+  // efetivo do elenco) e barra cedo, com mensagem amigável, se passar do
+  // teto do Firestore. Inalcançável numa pelada, mas evita erro opaco.
+  const projectedOps =
+    effectivePresence(input).filter((id) => validPlayerIds.has(id)).length + 3
+  if (projectedOps > BATCH_LIMIT)
+    throw new GameValidationError('Elenco grande demais para salvar em uma única operação.')
 }
 
 /** Adiciona ao batch o increment de cada player delta que exista no elenco. */
@@ -152,7 +160,8 @@ export async function createGame(
   }
 
   const statsInput = toStatsInput(input)
-  const present = effectivePresence(statsInput)
+  // Presença efetiva filtrada pelo elenco — não grava id fantasma no doc.
+  const present = effectivePresence(statsInput).filter((id) => validPlayerIds.has(id))
   const result = computeResult(input.scoreFor, input.scoreAgainst)
   const gameId = newId(gamesCol(teamId))
 
@@ -182,6 +191,7 @@ export async function createGame(
 export async function updateGame(
   teamId: string,
   gameId: string,
+  ownerId: string,
   oldGame: GameDoc,
   input: GameInput,
   players: Player[],
@@ -194,15 +204,16 @@ export async function updateGame(
   let competitionId = input.type === 'CAMPEONATO' ? input.competitionId : null
   if (input.type === 'CAMPEONATO' && input.newCompetitionName?.trim()) {
     competitionId = newId(competitionsCol(teamId))
+    // ownerId vem do usuário autenticado (não de oldGame), coerente com ownsNew().
     batch.set(
       competitionRef(teamId, competitionId),
-      buildCompetitionData(oldGame.ownerId, input.newCompetitionName),
+      buildCompetitionData(ownerId, input.newCompetitionName),
     )
   }
 
   const oldInput = toStatsInput(oldGame)
   const newStatsInput = toStatsInput(input)
-  const present = effectivePresence(newStatsInput)
+  const present = effectivePresence(newStatsInput).filter((id) => validPlayerIds.has(id))
   const result = computeResult(input.scoreFor, input.scoreAgainst)
 
   // ownerId e createdAt são imutáveis — não vão no update.

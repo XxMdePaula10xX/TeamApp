@@ -56,11 +56,23 @@ export function PlayerFormPage({ mode }: { mode: 'create' | 'edit' }) {
     }
   }, [mode, players, playerId])
 
+  // Preview do arquivo escolhido com revoke no cleanup (evita leak de blob URLs).
+  const [filePreview, setFilePreview] = useState<string>()
+  useEffect(() => {
+    if (!photoFile) {
+      setFilePreview(undefined)
+      return
+    }
+    const url = URL.createObjectURL(photoFile)
+    setFilePreview(url)
+    return () => URL.revokeObjectURL(url)
+  }, [photoFile])
+
   if (teamLoading) return <Loading />
   if (ready && !isOwner)
     return <p className="text-sm text-slate-500">Você não tem permissão para editar este elenco.</p>
 
-  const previewUrl = photoFile ? URL.createObjectURL(photoFile) : existingPhoto || undefined
+  const previewUrl = filePreview ?? (existingPhoto || undefined)
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault()

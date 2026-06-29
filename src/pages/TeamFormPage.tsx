@@ -37,6 +37,18 @@ export function TeamFormPage({ mode }: { mode: 'create' | 'edit' }) {
     }
   }, [mode, team])
 
+  // Preview do arquivo escolhido com revoke no cleanup (evita leak de blob URLs).
+  const [filePreview, setFilePreview] = useState<string>()
+  useEffect(() => {
+    if (!logoFile) {
+      setFilePreview(undefined)
+      return
+    }
+    const url = URL.createObjectURL(logoFile)
+    setFilePreview(url)
+    return () => URL.revokeObjectURL(url)
+  }, [logoFile])
+
   if (mode === 'edit') {
     if (teamLoading) return <Loading />
     if (teamError) return <ErrorState error={teamError} />
@@ -45,7 +57,7 @@ export function TeamFormPage({ mode }: { mode: 'create' | 'edit' }) {
       return <p className="text-sm text-slate-500">Você não tem permissão para editar este time.</p>
   }
 
-  const previewUrl = logoFile ? URL.createObjectURL(logoFile) : existingLogo || undefined
+  const previewUrl = filePreview ?? (existingLogo || undefined)
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault()

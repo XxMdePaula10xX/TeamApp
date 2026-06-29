@@ -8,7 +8,7 @@ import { deleteGame } from '@/services/games'
 import { EmptyState, ErrorState, Loading } from '@/components/states'
 import { formatDate } from '@/utils/dates'
 import { countAttributedGoals } from '@/utils/stats'
-import type { Game, GameType } from '@/types/models'
+import type { Game, GameType, Player } from '@/types/models'
 
 type Filter = GameType | 'TODOS'
 
@@ -16,7 +16,7 @@ type Filter = GameType | 'TODOS'
 export function GamesTab() {
   const { team, isOwner } = useTeamOutlet()
   const [filter, setFilter] = useState<Filter>('TODOS')
-  const { games, loading, error } = useGames(team.id, filter === 'TODOS' ? null : filter)
+  const { games, loading, error, pendingIds } = useGames(team.id, filter === 'TODOS' ? null : filter)
   const { players } = usePlayers(team.id)
   const { competitions } = useCompetitions(team.id)
 
@@ -72,6 +72,7 @@ export function GamesTab() {
               isOwner={isOwner}
               competitionName={game.competitionId ? compName.get(game.competitionId) : undefined}
               players={players ?? []}
+              pending={pendingIds.has(game.id)}
             />
           ))}
         </ul>
@@ -84,7 +85,8 @@ function FilterBtn({ label, active, onClick }: { label: string; active: boolean;
   return (
     <button
       onClick={onClick}
-      className={`whitespace-nowrap rounded-md px-2.5 py-1 transition-colors ${
+      aria-pressed={active}
+      className={`min-h-[36px] whitespace-nowrap rounded-md px-2.5 py-1 transition-colors ${
         active ? 'bg-white text-pitch-700 shadow-sm' : 'text-slate-500'
       }`}
     >
@@ -106,55 +108,71 @@ function GameRow({
   isOwner,
   competitionName,
   players,
+  pending,
 }: {
   teamId: string
   game: Game
   isOwner: boolean
   competitionName?: string
-  players: import('@/types/models').Player[]
+  players: Player[]
+  pending: boolean
 }) {
   const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
   const unattributed = game.scoreFor - countAttributedGoals(game.events)
 
   const onDelete = async () => {
     if (busy) return
     if (!window.confirm('Excluir este jogo e reverter as estatísticas?')) return
+    setErr(null)
     setBusy(true)
     try {
       await deleteGame(teamId, game.id, game, players)
-    } catch {
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Não foi possível excluir.')
       setBusy(false)
     }
   }
 
   return (
-    <li className="card flex items-center gap-3">
-      <span className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-extrabold ${RESULT_STYLE[game.result]}`}>
-        {RESULT_LETTER[game.result]}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="truncate font-semibold text-slate-900">
-          {game.scoreFor} <span className="text-slate-400">×</span> {game.scoreAgainst} · {game.opponent}
-        </p>
-        <p className="truncate text-xs text-slate-500">
-          {formatDate(game.date)} ·{' '}
-          {game.type === 'CAMPEONATO' ? competitionName ?? 'Campeonato' : 'Amistoso'}
-          {unattributed > 0 && ` · ${unattributed} gol(s) não-atribuído(s)`}
-        </p>
-      </div>
-      {isOwner && (
-        <div className="flex shrink-0 gap-1">
-          <Link
-            to={`/time/${teamId}/jogo/${game.id}/editar`}
-            className="btn-ghost border border-slate-200 px-2 py-1 text-xs"
-          >
-            Editar
-          </Link>
-          <button onClick={onDelete} disabled={busy} className="btn-ghost px-2 py-1 text-xs text-red-600">
-            Excluir
-          </button>
+    <li className="card flex flex-col gap-1">
+      <div className="flex items-center gap-3">
+        <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-extrabold ${RESULT_STYLE[game.result]}`}>
+          {RESULT_LETTER[game.result]}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-semibold text-slate-900">
+            {game.scoreFor} <span className="text-slate-400">×</span> {game.scoreAgainst} · {game.opponent}
+            {pending && (
+              <span
+                className="ml-2 rounded-full bg-amber-100 px-1.5 py-0.5 align-middle text-[10px] font-medium text-amber-700"
+                title="Aguardando sincronização"
+              >
+                ⏳ não sincronizado
+              </span>
+            )}
+          </p>
+          <p className="truncate text-xs text-slate-500">
+            {formatDate(game.date)} ·{' '}
+            {game.type === 'CAMPEONATO' ? competitionName ?? 'Campeonato' : 'Amistoso'}
+            {unattributed > 0 && ` · ${unattributed} gol(s) não-atribuído(s)`}
+          </p>
         </div>
-      )}
+        {isOwner && (
+          <div className="flex shrink-0 gap-1">
+            <Link
+              to={`/time/${teamId}/jogo/${game.id}/editar`}
+              className="btn-ghost border border-slate-200 px-2 py-1 text-xs"
+            >
+              Editar
+            </Link>
+            <button onClick={onDelete} disabled={busy} className="btn-ghost px-2 py-1 text-xs text-red-600">
+              Excluir
+            </button>
+          </div>
+        )}
+      </div>
+      {err && <p className="text-xs text-red-600">{err}</p>}
     </li>
   )
 }

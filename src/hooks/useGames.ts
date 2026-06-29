@@ -13,7 +13,7 @@ const GAMES_LIMIT = 100
  * (sempre presente) — nunca por createdAt (pode estar pendente offline).
  */
 export function useGames(teamId: string | undefined, typeFilter?: GameType | null) {
-  const { data, loading, error } = useQueryData<GameDoc>(
+  const { data, loading, error, pendingIds } = useQueryData<GameDoc>(
     () => {
       if (!teamId) return null
       const base = gamesCol(teamId)
@@ -23,7 +23,7 @@ export function useGames(teamId: string | undefined, typeFilter?: GameType | nul
     },
     [teamId, typeFilter],
   )
-  return { games: data, loading, error }
+  return { games: data, loading, error, pendingIds }
 }
 
 /** Um jogo pelo id (para hidratar o editor). */

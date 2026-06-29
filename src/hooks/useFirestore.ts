@@ -24,37 +24,50 @@ export interface AsyncState<T> {
   error: Error | null
 }
 
+const EMPTY_PENDING: ReadonlySet<string> = new Set()
+
+export interface ListState<T> extends AsyncState<WithId<T>[]> {
+  /** Ids de docs com escrita local ainda não confirmada pelo servidor. */
+  pendingIds: ReadonlySet<string>
+}
+
 /** Assina uma query e devolve a lista hidratada com `id`. */
 export function useQueryData<T>(
   makeQuery: () => Query<DocumentData> | null,
   deps: DependencyList,
-): AsyncState<WithId<T>[]> {
-  const [state, setState] = useState<AsyncState<WithId<T>[]>>({
+): ListState<T> {
+  const [state, setState] = useState<ListState<T>>({
     data: undefined,
     loading: true,
     error: null,
+    pendingIds: EMPTY_PENDING,
   })
 
   useEffect(() => {
     let cancelled = false
-    setState({ data: undefined, loading: true, error: null })
+    setState({ data: undefined, loading: true, error: null, pendingIds: EMPTY_PENDING })
 
     const q = makeQuery()
     if (!q) {
-      setState({ data: [], loading: false, error: null })
+      setState({ data: [], loading: false, error: null, pendingIds: EMPTY_PENDING })
       return
     }
 
     const unsub = onSnapshot(
       q,
+      // includeMetadataChanges: para refletir hasPendingWrites no badge de sync.
+      { includeMetadataChanges: true },
       (snap) => {
         if (cancelled) return
         const data = snap.docs.map((d) => ({ id: d.id, ...(d.data(SNAPSHOT_OPTS) as T) }))
-        setState({ data, loading: false, error: null })
+        const pendingIds = new Set(
+          snap.docs.filter((d) => d.metadata.hasPendingWrites).map((d) => d.id),
+        )
+        setState({ data, loading: false, error: null, pendingIds })
       },
       (error) => {
         if (cancelled) return
-        setState({ data: undefined, loading: false, error })
+        setState({ data: undefined, loading: false, error, pendingIds: EMPTY_PENDING })
       },
     )
 

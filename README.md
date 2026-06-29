@@ -107,7 +107,8 @@ nova (ver `src/utils/stats.ts`).
 ## Roadmap
 
 - [x] **Sprint 0 — Setup**: projeto, Firebase, Capacitor, regras, CI, scaffold.
-- [ ] **Sprint 1 — Núcleo**: auth, CRUD de time/jogador/jogo + agregados.
+- [x] **Sprint 1 — Núcleo**: auth, CRUD de time/jogador/jogo + agregados
+      (writeBatch + increment offline-safe, regras por ownerId, soft-delete).
 - [ ] **Sprint 2 — Estatísticas**: visão geral, artilharia, assistências,
       frequência, filtros.
 - [ ] **Sprint 3 — Busca e modo público**: busca por nome, página pública,

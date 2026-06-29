@@ -128,7 +128,7 @@ export function GameFormPage({ mode }: { mode: 'create' | 'edit' }) {
 
   const { team, loading: teamLoading } = useTeam(teamId)
   const { isOwner, ready } = useIsOwner(team, teamLoading)
-  const { players } = usePlayers(teamId)
+  const { players, loading: playersLoading } = usePlayers(teamId)
   const { competitions } = useCompetitions(teamId)
   const { game, loading: gameLoading } = useGame(teamId, mode === 'edit' ? gameId : undefined)
 
@@ -181,7 +181,9 @@ export function GameFormPage({ mode }: { mode: 'create' | 'edit' }) {
   const unattributed = draft.scoreFor - attributed
   const scoreValid = attributed <= draft.scoreFor
 
-  if (teamLoading || (mode === 'edit' && gameLoading)) return <Loading />
+  // Aguarda players carregar: o roster e a validação dependem dele (sem
+  // isso o submit poderia rodar com elenco vazio e perder increments).
+  if (teamLoading || playersLoading || (mode === 'edit' && gameLoading)) return <Loading />
   if (ready && !isOwner)
     return <p className="text-sm text-slate-500">Você não tem permissão para editar jogos deste time.</p>
 
@@ -244,7 +246,7 @@ export function GameFormPage({ mode }: { mode: 'create' | 'edit' }) {
       if (mode === 'create') {
         await createGame(teamId, uid, input, players ?? [])
       } else if (game) {
-        await updateGame(teamId, game.id, game, input, players ?? [])
+        await updateGame(teamId, game.id, uid, game, input, players ?? [])
       }
       navigate(`/time/${teamId}/jogos`)
     } catch (err) {
@@ -296,8 +298,14 @@ export function GameFormPage({ mode }: { mode: 'create' | 'edit' }) {
               />
             </div>
             <div>
-              <label className="label">Mando</label>
-              <div className="flex gap-1 rounded-lg bg-slate-100 p-1 text-xs font-medium">
+              <span className="label" id="mando-label">
+                Mando
+              </span>
+              <div
+                role="group"
+                aria-labelledby="mando-label"
+                className="flex gap-1 rounded-lg bg-slate-100 p-1 text-xs font-medium"
+              >
                 <HomeAwayBtn label="—" active={draft.homeAway === null} onClick={() => dispatch({ kind: 'HOME_AWAY', value: null })} />
                 <HomeAwayBtn label="Casa" active={draft.homeAway === 'CASA'} onClick={() => dispatch({ kind: 'HOME_AWAY', value: 'CASA' })} />
                 <HomeAwayBtn label="Fora" active={draft.homeAway === 'FORA'} onClick={() => dispatch({ kind: 'HOME_AWAY', value: 'FORA' })} />
@@ -379,6 +387,11 @@ export function GameFormPage({ mode }: { mode: 'create' | 'edit' }) {
               {Math.max(0, unattributed)} não-atribuído(s)
             </span>
           </div>
+          {!scoreValid && (
+            <p className="text-xs text-red-600">
+              Remova {attributed - draft.scoreFor} gol(s) ou aumente o placar a favor.
+            </p>
+          )}
 
           {draft.goals.map((goal) => (
             <div key={goal.uid} className="flex flex-wrap items-center gap-2 rounded-lg bg-slate-50 p-2">
@@ -462,8 +475,9 @@ export function GameFormPage({ mode }: { mode: 'create' | 'edit' }) {
                   <button
                     key={p.id}
                     type="button"
+                    aria-pressed={on}
                     onClick={() => dispatch({ kind: 'TOGGLE_PRESENCE', playerId: p.id })}
-                    className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+                    className={`min-h-[40px] rounded-full border px-3 py-2 text-xs transition-colors ${
                       on
                         ? 'border-pitch-500 bg-pitch-50 text-pitch-700'
                         : 'border-slate-200 text-slate-500'
@@ -539,7 +553,8 @@ function TypeBtn({ label, active, onClick }: { label: string; active: boolean; o
     <button
       type="button"
       onClick={onClick}
-      className={`flex-1 rounded-md px-3 py-1.5 transition-colors ${
+      aria-pressed={active}
+      className={`min-h-[40px] flex-1 rounded-md px-3 py-1.5 transition-colors ${
         active ? 'bg-white text-pitch-700 shadow-sm' : 'text-slate-500'
       }`}
     >
@@ -553,7 +568,8 @@ function HomeAwayBtn({ label, active, onClick }: { label: string; active: boolea
     <button
       type="button"
       onClick={onClick}
-      className={`flex-1 rounded-md px-2 py-1 transition-colors ${
+      aria-pressed={active}
+      className={`min-h-[40px] flex-1 rounded-md px-2 py-1 transition-colors ${
         active ? 'bg-white text-pitch-700 shadow-sm' : 'text-slate-500'
       }`}
     >
