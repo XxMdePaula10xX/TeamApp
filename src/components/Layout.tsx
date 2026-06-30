@@ -1,10 +1,12 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
+import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 
 /** Barra de navegação inferior (mobile-first) + topo com identidade. */
 export function Layout() {
   const user = useAuthStore((s) => s.user)
   const signOut = useAuthStore((s) => s.signOut)
+  const online = useOnlineStatus()
   const navigate = useNavigate()
 
   const handleSignOut = async () => {
@@ -29,6 +31,12 @@ export function Layout() {
           </Link>
         )}
       </header>
+
+      {!online && (
+        <div className="bg-amber-100 px-4 py-1.5 text-center text-xs font-medium text-amber-800">
+          📡 Você está offline — suas alterações sincronizam ao reconectar.
+        </div>
+      )}
 
       <main className="flex-1 space-y-4 p-4">
         <Outlet />

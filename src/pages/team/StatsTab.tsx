@@ -4,6 +4,7 @@ import { usePlayers } from '@/hooks/usePlayers'
 import { GAMES_LIMIT, useGames } from '@/hooks/useGames'
 import { Avatar } from '@/components/Avatar'
 import { EmptyState, ErrorState, Loading } from '@/components/states'
+import { StatCard, type StatCardRow } from '@/components/cards/StatCard'
 import {
   EMPTY_PLAYER_STATS,
   applyPlayerStats,
@@ -14,6 +15,15 @@ import {
 import type { GameType, Player, PlayerStats } from '@/types/models'
 
 const PlayerBars = lazy(() => import('@/components/charts/PlayerBars'))
+const ShareCardModal = lazy(() => import('@/components/cards/ShareCardModal'))
+
+interface CardConfig {
+  title: string
+  emoji: string
+  rows: StatCardRow[]
+  filename: string
+  note?: string
+}
 const ChartFallback = () => (
   <div className="flex h-[140px] items-center justify-center text-xs text-slate-400">
     Carregando gráfico…
@@ -29,8 +39,12 @@ const firstName = (name: string) => name.trim().split(/\s+/)[0]
 export function StatsTab() {
   const { team } = useTeamOutlet()
   const [filter, setFilter] = useState<Filter>('TODOS')
+  const [card, setCard] = useState<CardConfig | null>(null)
   const { players, loading: playersLoading, error: playersError } = usePlayers(team.id)
   const { games, loading: gamesLoading } = useGames(team.id, filter === 'TODOS' ? null : filter)
+
+  const filterLabel =
+    filter === 'TODOS' ? 'Todos os jogos' : filter === 'AMISTOSO' ? 'Amistosos' : 'Campeonato'
 
   // No modo "Todos" usa os agregados denormalizados (precisos, ilimitados).
   // Filtrado por tipo, recalcula a partir dos jogos carregados.
@@ -158,9 +172,75 @@ export function StatsTab() {
           </Suspense>
         </Section>
       )}
+
+      {hasData && (
+        <Section title="📸 Cards compartilháveis">
+          <p className="text-xs text-slate-500">Gere uma imagem para postar no grupo da pelada.</p>
+          <div className="flex flex-wrap gap-2 pt-1">
+            {scorers.length > 0 && (
+              <button
+                onClick={() =>
+                  setCard({
+                    title: 'Artilharia',
+                    emoji: '🥇',
+                    rows: scorers.slice(0, 5).map((r, i) => ({
+                      rank: i + 1,
+                      name: r.player.name,
+                      value: r.stats.goals,
+                      unit: r.stats.goals === 1 ? 'gol' : 'gols',
+                    })),
+                    filename: `artilharia-${slug(team.normalizedName)}.png`,
+                    note: filterLabel,
+                  })
+                }
+                className="btn-ghost border border-slate-300 text-sm"
+              >
+                🥇 Artilharia
+              </button>
+            )}
+            <button
+              onClick={() => setCard(buildHighlightsCard())}
+              className="btn-ghost border border-slate-300 text-sm"
+            >
+              ⭐ Destaques
+            </button>
+          </div>
+        </Section>
+      )}
+
+      {card && (
+        <Suspense fallback={null}>
+          <ShareCardModal
+            filename={card.filename}
+            shareTitle={`${card.title} — ${team.name}`}
+            onClose={() => setCard(null)}
+          >
+            <StatCard
+              teamName={team.name}
+              title={card.title}
+              emoji={card.emoji}
+              rows={card.rows}
+              note={card.note}
+            />
+          </ShareCardModal>
+        </Suspense>
+      )}
     </div>
   )
+
+  function buildHighlightsCard(): CardConfig {
+    const rows: StatCardRow[] = []
+    if (scorers[0])
+      rows.push({ label: 'Artilheiro', name: scorers[0].player.name, value: scorers[0].stats.goals, unit: 'gols' })
+    if (assisters[0])
+      rows.push({ label: 'Garçom', name: assisters[0].player.name, value: assisters[0].stats.assists, unit: 'assist.' })
+    if (attendance[0])
+      rows.push({ label: 'Presença', name: attendance[0].player.name, value: attendance[0].stats.gamesPlayed, unit: 'jogos' })
+    return { title: 'Destaques', emoji: '⭐', rows, filename: `destaques-${slug(team.normalizedName)}.png`, note: filterLabel }
+  }
 }
+
+const slug = (s: string) => s.replace(/\s+/g, '-') || 'time'
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (

@@ -115,5 +115,8 @@ nova (ver `src/utils/stats.ts`).
 - [x] **Sprint 3 — Busca e modo público**: busca por `normalizedName`
       (prefixo, com debounce), página do time pública/leitura para anônimos,
       e botão Compartilhar (deep link via Web Share API + cópia).
-- [ ] **Sprint 4 — Viralização e polimento**: cards PNG, empty states,
-      offline, publicação.
+- [x] **Sprint 4 — Viralização e polimento**: cards de estatística em PNG
+      (artilharia/destaques, compartilháveis), banner de offline, empty
+      states/loading, e checklist de publicação ([docs/PUBLICACAO.md](docs/PUBLICACAO.md)).
+
+🎉 **MVP completo** — pronto para configurar o Firebase, testar e publicar.
