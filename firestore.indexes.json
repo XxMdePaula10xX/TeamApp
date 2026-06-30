@@ -1,13 +1,7 @@
 {
   "indexes": [
     {
-      "comment": "Jogos por data (lista cronológica na aba Jogos).",
-      "collectionGroup": "games",
-      "queryScope": "COLLECTION",
-      "fields": [{ "fieldPath": "date", "order": "DESCENDING" }]
-    },
-    {
-      "comment": "Filtro de jogos por tipo (amistoso/campeonato) ordenado por data.",
+      "comment": "Filtro de jogos por tipo (amistoso/campeonato) ordenado por data. (A ordenação só por `date` usa o índice de campo único, criado automaticamente pelo Firestore — por isso não é declarada aqui.)",
       "collectionGroup": "games",
       "queryScope": "COLLECTION",
       "fields": [
