@@ -4,7 +4,7 @@ Guia para levar o app às lojas via **Capacitor + Codemagic**.
 
 ## 1. Pré-requisitos (uma vez)
 
-- [ ] Projeto Firebase criado, com **Auth** (Google + e-mail/senha), **Firestore** e **Storage** habilitados.
+- [ ] Projeto Firebase criado, com **Auth** (**E-mail/senha**), **Firestore** e **Storage** habilitados.
 - [ ] `.env` preenchido com as `VITE_FIREBASE_*` (e `VITE_PUBLIC_BASE_URL` com o domínio do deploy, para os links de compartilhamento).
 - [ ] Regras e índices publicados:
       `firebase deploy --only firestore:rules,storage,firestore:indexes`
@@ -54,7 +54,7 @@ dias só começa quando o teste fechado está ativo com os testers de fato opt-i
 
 ## 6. Smoke test antes de submeter
 
-- [ ] Login (Google + e-mail), criar time, adicionar jogador, cadastrar jogo.
+- [ ] Criar conta e login (e-mail/senha), redefinir senha, criar time, adicionar jogador, cadastrar jogo.
 - [ ] Conferir agregados (V/E/D, artilharia, assistências, frequência) e gráficos.
 - [ ] Editar e excluir um jogo → estatísticas revertem corretamente.
 - [ ] Buscar o time por nome (modo anônimo) e abrir em modo leitura.

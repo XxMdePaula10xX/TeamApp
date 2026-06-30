@@ -1,18 +1,11 @@
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { Link, NavLink, Outlet } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 
 /** Barra de navegação inferior (mobile-first) + topo com identidade. */
 export function Layout() {
   const user = useAuthStore((s) => s.user)
-  const signOut = useAuthStore((s) => s.signOut)
   const online = useOnlineStatus()
-  const navigate = useNavigate()
-
-  const handleSignOut = async () => {
-    await signOut()
-    navigate('/login')
-  }
 
   return (
     <div className="mx-auto flex min-h-full max-w-2xl flex-col">
@@ -22,9 +15,9 @@ export function Layout() {
           Pelada Manager
         </Link>
         {user ? (
-          <button onClick={handleSignOut} className="btn-ghost text-xs">
-            Sair
-          </button>
+          <Link to="/conta" className="btn-ghost text-xs">
+            ⚙️ Conta
+          </Link>
         ) : (
           <Link to="/login" className="btn-ghost text-xs">
             Entrar

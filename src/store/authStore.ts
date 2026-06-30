@@ -1,39 +1,41 @@
 /**
- * Estado de autenticação (Zustand).
- *
- * Mantém o usuário atual e o estado de carregamento inicial. A
- * implementação completa do fluxo de login (criação do doc em
- * `users/{uid}`, tratamento de erros) entra no Sprint 1; aqui fica a
- * fundação: listener de sessão + ações de sign-in/out.
+ * Estado de autenticação (Zustand). Apenas e-mail/senha: login, cadastro,
+ * redefinição de senha e logout. (Exclusão de conta fica em
+ * services/account.ts por exigir reautenticação + limpeza de dados.)
  */
 import { create } from 'zustand'
 import {
+  createUserWithEmailAndPassword,
   onAuthStateChanged,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
-  signInWithPopup,
   signOut as fbSignOut,
   type User,
 } from 'firebase/auth'
-import { auth, googleProvider } from '@/lib/firebase'
+import { auth } from '@/lib/firebase'
 import { ensureUserDoc } from '@/services/users'
 
 interface AuthState {
   user: User | null
   /** true até o primeiro disparo do listener (evita "piscar" o login). */
   initializing: boolean
-  signInWithGoogle: () => Promise<void>
   signInWithEmail: (email: string, password: string) => Promise<void>
+  signUpWithEmail: (email: string, password: string) => Promise<void>
+  sendPasswordReset: (email: string) => Promise<void>
   signOut: () => Promise<void>
 }
 
 export const useAuthStore = create<AuthState>(() => ({
   user: null,
   initializing: true,
-  signInWithGoogle: async () => {
-    await signInWithPopup(auth, googleProvider)
-  },
   signInWithEmail: async (email, password) => {
-    await signInWithEmailAndPassword(auth, email, password)
+    await signInWithEmailAndPassword(auth, email.trim(), password)
+  },
+  signUpWithEmail: async (email, password) => {
+    await createUserWithEmailAndPassword(auth, email.trim(), password)
+  },
+  sendPasswordReset: async (email) => {
+    await sendPasswordResetEmail(auth, email.trim())
   },
   signOut: async () => {
     await fbSignOut(auth)

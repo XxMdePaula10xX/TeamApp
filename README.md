@@ -15,7 +15,7 @@ Qualquer pessoa pode buscar um time e ver suas estatísticas públicas.
 | Front-end | Vite + React 18 + TypeScript |
 | Empacotamento nativo | Capacitor (Android/iOS) |
 | Backend | Firebase Firestore (cache offline) |
-| Auth | Firebase Auth (Google + e-mail/senha) |
+| Auth | Firebase Auth (e-mail/senha) |
 | Arquivos | Firebase Storage |
 | Gráficos | Recharts |
 | Roteamento | React Router |
@@ -46,9 +46,10 @@ npm run lint       # ESLint
 
 ### Firebase
 
-O app espera um projeto Firebase com **Authentication** (provedores Google e
-E-mail/senha), **Cloud Firestore** e **Storage** habilitados. As regras de
-segurança estão versionadas:
+O app espera um projeto Firebase com **Authentication** (provedor
+**E-mail/senha**), **Cloud Firestore** e **Storage** habilitados. O login
+inclui criar conta, redefinir senha ("esqueci a senha") e excluir conta. As
+regras de segurança estão versionadas:
 
 - `firestore.rules` — leitura pública, escrita restrita ao dono (`ownerId`
   imutável).

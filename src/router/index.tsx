@@ -3,6 +3,7 @@ import { Layout } from '@/components/Layout'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { LoginPage } from '@/pages/LoginPage'
 import { HomePage } from '@/pages/HomePage'
+import { AccountPage } from '@/pages/AccountPage'
 import { SearchPage } from '@/pages/SearchPage'
 import { TeamFormPage } from '@/pages/TeamFormPage'
 import { PlayerFormPage } from '@/pages/PlayerFormPage'
@@ -37,6 +38,16 @@ export const router = createBrowserRouter([
       },
       // Busca pública (acessível a anônimos).
       { path: 'buscar', element: <SearchPage /> },
+
+      // Conta do usuário (exige login).
+      {
+        path: 'conta',
+        element: (
+          <ProtectedRoute>
+            <AccountPage />
+          </ProtectedRoute>
+        ),
+      },
 
       // Criar time (dono).
       {

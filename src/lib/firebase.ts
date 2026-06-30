@@ -6,7 +6,7 @@
  * "lançar o placar no campo sem sinal" (PRD §3).
  */
 import { initializeApp, type FirebaseApp } from 'firebase/app'
-import { getAuth, GoogleAuthProvider, type Auth } from 'firebase/auth'
+import { getAuth, type Auth } from 'firebase/auth'
 import {
   initializeFirestore,
   persistentLocalCache,
@@ -36,8 +36,6 @@ if (import.meta.env.DEV && (!firebaseConfig.apiKey || firebaseConfig.apiKey === 
 export const app: FirebaseApp = initializeApp(firebaseConfig)
 
 export const auth: Auth = getAuth(app)
-
-export const googleProvider = new GoogleAuthProvider()
 
 /**
  * Firestore com cache local persistente (IndexedDB) e suporte a múltiplas

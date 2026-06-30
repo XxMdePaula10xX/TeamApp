@@ -2,21 +2,25 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 
+type Mode = 'signin' | 'signup' | 'reset'
+
 /**
- * Login com Google e e-mail/senha (PRD §7.1). Visitante anônimo pode
- * pular e ir direto para a Busca. O tratamento fino de erros e a
- * criação do doc em `users/{uid}` são detalhados no Sprint 1.
+ * Autenticação por e-mail/senha (PRD §7.1): entrar, criar conta e
+ * redefinir senha. Visitante anônimo pode pular e ir para a Busca.
  */
 export function LoginPage() {
   const user = useAuthStore((s) => s.user)
   const initializing = useAuthStore((s) => s.initializing)
-  const signInWithGoogle = useAuthStore((s) => s.signInWithGoogle)
   const signInWithEmail = useAuthStore((s) => s.signInWithEmail)
+  const signUpWithEmail = useAuthStore((s) => s.signUpWithEmail)
+  const sendPasswordReset = useAuthStore((s) => s.sendPasswordReset)
   const navigate = useNavigate()
 
+  const [mode, setMode] = useState<Mode>('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [info, setInfo] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
   // Já logado → vai para Meus Times.
@@ -24,21 +28,48 @@ export function LoginPage() {
     if (!initializing && user) navigate('/', { replace: true })
   }, [initializing, user, navigate])
 
-  const wrap = async (fn: () => Promise<void>) => {
+  const switchMode = (m: Mode) => {
+    setMode(m)
     setError(null)
+    setInfo(null)
+  }
+
+  const onSubmit = async (e: FormEvent) => {
+    e.preventDefault()
+    if (busy) return
+    setError(null)
+    setInfo(null)
+
+    if (!email.trim()) {
+      setError('Informe seu e-mail.')
+      return
+    }
+    if (mode !== 'reset' && password.length < 6) {
+      setError('A senha precisa ter ao menos 6 caracteres.')
+      return
+    }
+
     setBusy(true)
     try {
-      await fn()
+      if (mode === 'signin') {
+        await signInWithEmail(email, password)
+      } else if (mode === 'signup') {
+        await signUpWithEmail(email, password)
+      } else {
+        await sendPasswordReset(email)
+        setInfo('Enviamos um link de redefinição para o seu e-mail. Confira a caixa de entrada (e o spam).')
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Não foi possível entrar.')
+      setError(authErrorMessage(err))
     } finally {
       setBusy(false)
     }
   }
 
-  const onEmailSubmit = (e: FormEvent) => {
-    e.preventDefault()
-    void wrap(() => signInWithEmail(email, password))
+  const titles: Record<Mode, string> = {
+    signin: 'Entrar',
+    signup: 'Criar conta',
+    reset: 'Redefinir senha',
   }
 
   return (
@@ -47,53 +78,100 @@ export function LoginPage() {
         <div className="text-5xl" aria-hidden>
           ⚽
         </div>
-        <h1 className="mt-2 text-2xl font-extrabold tracking-tight text-pitch-700">
-          Pelada Manager
-        </h1>
+        <h1 className="mt-2 text-2xl font-extrabold tracking-tight text-pitch-700">Pelada Manager</h1>
         <p className="mt-1 text-sm text-slate-500">
           Artilharia, assistências e aproveitamento do seu fut.
         </p>
       </div>
 
-      <button
-        onClick={() => void wrap(signInWithGoogle)}
-        disabled={busy}
-        className="btn w-full border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-      >
-        <span aria-hidden>🔵</span> Entrar com Google
-      </button>
+      <form onSubmit={onSubmit} className="flex flex-col gap-3">
+        <h2 className="text-center text-sm font-semibold text-slate-600">{titles[mode]}</h2>
 
-      <div className="flex items-center gap-3 text-xs text-slate-400">
-        <span className="h-px flex-1 bg-slate-200" /> ou <span className="h-px flex-1 bg-slate-200" />
-      </div>
-
-      <form onSubmit={onEmailSubmit} className="flex flex-col gap-3">
         <input
           type="email"
+          autoComplete="email"
           required
           placeholder="E-mail"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-pitch-500 focus:outline-none"
+          className="input"
         />
-        <input
-          type="password"
-          required
-          placeholder="Senha"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-pitch-500 focus:outline-none"
-        />
+
+        {mode !== 'reset' && (
+          <input
+            type="password"
+            autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+            required
+            placeholder="Senha"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="input"
+          />
+        )}
+
         <button type="submit" disabled={busy} className="btn-primary w-full">
-          Entrar
+          {busy ? 'Aguarde…' : titles[mode]}
         </button>
       </form>
 
       {error && <p className="text-center text-sm text-red-600">{error}</p>}
+      {info && <p className="text-center text-sm text-pitch-700">{info}</p>}
+
+      <div className="flex flex-col items-center gap-2 text-sm">
+        {mode === 'signin' && (
+          <>
+            <button onClick={() => switchMode('reset')} className="font-medium text-slate-500 hover:text-slate-700">
+              Esqueci minha senha
+            </button>
+            <p className="text-slate-500">
+              Não tem conta?{' '}
+              <button onClick={() => switchMode('signup')} className="font-semibold text-pitch-700">
+                Criar conta
+              </button>
+            </p>
+          </>
+        )}
+        {mode === 'signup' && (
+          <p className="text-slate-500">
+            Já tem conta?{' '}
+            <button onClick={() => switchMode('signin')} className="font-semibold text-pitch-700">
+              Entrar
+            </button>
+          </p>
+        )}
+        {mode === 'reset' && (
+          <button onClick={() => switchMode('signin')} className="font-medium text-pitch-700">
+            ← Voltar para entrar
+          </button>
+        )}
+      </div>
 
       <Link to="/buscar" className="text-center text-sm font-medium text-slate-500 hover:text-slate-700">
         Continuar sem conta → buscar um time
       </Link>
     </div>
   )
+}
+
+/** Traduz os códigos de erro mais comuns do Firebase Auth. */
+function authErrorMessage(err: unknown): string {
+  const code = typeof err === 'object' && err && 'code' in err ? String((err as { code: unknown }).code) : ''
+  switch (code) {
+    case 'auth/invalid-email':
+      return 'E-mail inválido.'
+    case 'auth/email-already-in-use':
+      return 'Este e-mail já tem conta. Tente entrar.'
+    case 'auth/weak-password':
+      return 'Senha fraca: use ao menos 6 caracteres.'
+    case 'auth/invalid-credential':
+    case 'auth/wrong-password':
+    case 'auth/user-not-found':
+      return 'E-mail ou senha incorretos.'
+    case 'auth/too-many-requests':
+      return 'Muitas tentativas. Tente de novo em alguns minutos.'
+    case 'auth/network-request-failed':
+      return 'Falha de conexão. Verifique a internet.'
+    default:
+      return err instanceof Error ? err.message : 'Não foi possível concluir.'
+  }
 }

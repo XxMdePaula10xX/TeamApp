@@ -49,7 +49,8 @@ service cloud.firestore {
         && (request.auth.token.email == null
             || request.resource.data.email == request.auth.token.email);
       allow update: if signedIn() && request.auth.uid == userId;
-      // delete: negado.
+      // Permite excluir o próprio doc (fluxo de exclusão de conta).
+      allow delete: if signedIn() && request.auth.uid == userId;
     }
 
     // ── teams ──────────────────────────────────────────────
