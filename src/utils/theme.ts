@@ -1,24 +1,29 @@
 /**
  * Tema dinâmico: gera a paleta `pitch` (50→950) a partir de UMA cor base
  * e aplica nas CSS variables, deixando toda a UI (bg-pitch-*, text-pitch-*)
- * responder em runtime. A luminosidade de cada degrau é FIXA (não usa a
- * luminosidade da cor escolhida) — assim 600/700 ficam sempre escuros o
- * suficiente para texto branco, qualquer que seja a cor do time.
+ * responder em runtime.
+ *
+ * Cada degrau mira uma LUMINÂNCIA RELATIVA (WCAG), não a luminosidade HSL
+ * — luminosidade HSL não corresponde ao brilho percebido (amarelo a 46% de
+ * L é muito mais claro que azul a 46%). Mirando a luminância garantimos que
+ * os tons escuros (600–950) fiquem escuros o bastante para TEXTO BRANCO
+ * legível e os claros (50–200) para texto escuro, em qualquer matiz.
  */
 
-/** Degraus da escala e sua luminosidade-alvo (0–100). */
+/** Degraus e sua luminância relativa-alvo (0–1). Escolhidas para que branco
+ *  sobre 600/700 passe no WCAG AA (~4.5:1) e preto/slate sobre 50–200 também. */
 const STEPS: Record<string, number> = {
-  '50': 97,
-  '100': 93,
-  '200': 85,
-  '300': 75,
-  '400': 64,
-  '500': 55,
-  '600': 46,
-  '700': 38,
-  '800': 31,
-  '900': 25,
-  '950': 14,
+  '50': 0.92,
+  '100': 0.82,
+  '200': 0.68,
+  '300': 0.5,
+  '400': 0.33,
+  '500': 0.22,
+  '600': 0.15,
+  '700': 0.1,
+  '800': 0.065,
+  '900': 0.04,
+  '950': 0.018,
 }
 
 export function isValidHexColor(hex: string): boolean {
@@ -74,13 +79,39 @@ function hslToRgb(h: number, s: number, l: number): [number, number, number] {
   ]
 }
 
+/** Luminância relativa WCAG (0–1) de um RGB 0–255. */
+function relativeLuminance(r: number, g: number, b: number): number {
+  const lin = [r, g, b].map((v) => {
+    const c = v / 255
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+  })
+  return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2]
+}
+
+/**
+ * Acha a luminosidade HSL que produz a luminância relativa-alvo para um
+ * dado matiz/saturação (luminância é monotônica em L). Busca binária.
+ */
+function lightnessForLuminance(h: number, s: number, target: number): number {
+  let lo = 0
+  let hi = 1
+  for (let i = 0; i < 18; i++) {
+    const mid = (lo + hi) / 2
+    const [r, g, b] = hslToRgb(h, s, mid)
+    if (relativeLuminance(r, g, b) < target) lo = mid
+    else hi = mid
+  }
+  return (lo + hi) / 2
+}
+
 /** Mapa degrau → "R G B" (formato das CSS variables). */
 export function generateScale(hex: string): Record<string, string> {
   const [r, g, b] = hexToRgb(hex)
   const [h, s] = rgbToHsl(r, g, b)
   const out: Record<string, string> = {}
-  for (const [step, lightness] of Object.entries(STEPS)) {
-    const [rr, gg, bb] = hslToRgb(h, s, lightness / 100)
+  for (const [step, targetLum] of Object.entries(STEPS)) {
+    const l = lightnessForLuminance(h, s, targetLum)
+    const [rr, gg, bb] = hslToRgb(h, s, l)
     out[step] = `${rr} ${gg} ${bb}`
   }
   return out
