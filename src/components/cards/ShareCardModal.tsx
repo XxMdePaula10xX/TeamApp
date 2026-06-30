@@ -2,7 +2,7 @@
  * Modal de pré-visualização do card de estatística, com ações de
  * compartilhar/baixar PNG. Lazy-loaded (puxa html-to-image só aqui).
  */
-import { useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { shareOrDownloadPng } from '@/utils/exportImage'
 
 interface Props {
@@ -16,6 +16,15 @@ export default function ShareCardModal({ filename, shareTitle, onClose, children
   const cardRef = useRef<HTMLDivElement>(null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
+
+  // Fecha com Escape.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
 
   const onExport = async () => {
     if (!cardRef.current || busy) return

@@ -22,7 +22,9 @@ function download(blob: Blob, filename: string) {
   document.body.appendChild(a)
   a.click()
   a.remove()
-  URL.revokeObjectURL(url)
+  // Adia o revoke: revogar no mesmo tick aborta o download em alguns
+  // navegadores (Firefox/Safari/WebView) para blobs não-triviais.
+  setTimeout(() => URL.revokeObjectURL(url), 10_000)
 }
 
 export async function shareOrDownloadPng(

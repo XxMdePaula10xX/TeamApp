@@ -231,11 +231,11 @@ export function StatsTab() {
   function buildHighlightsCard(): CardConfig {
     const rows: StatCardRow[] = []
     if (scorers[0])
-      rows.push({ label: 'Artilheiro', name: scorers[0].player.name, value: scorers[0].stats.goals, unit: 'gols' })
+      rows.push({ label: 'Artilheiro', name: scorers[0].player.name, value: scorers[0].stats.goals, unit: scorers[0].stats.goals === 1 ? 'gol' : 'gols' })
     if (assisters[0])
       rows.push({ label: 'Garçom', name: assisters[0].player.name, value: assisters[0].stats.assists, unit: 'assist.' })
     if (attendance[0])
-      rows.push({ label: 'Presença', name: attendance[0].player.name, value: attendance[0].stats.gamesPlayed, unit: 'jogos' })
+      rows.push({ label: 'Presença', name: attendance[0].player.name, value: attendance[0].stats.gamesPlayed, unit: attendance[0].stats.gamesPlayed === 1 ? 'jogo' : 'jogos' })
     return { title: 'Destaques', emoji: '⭐', rows, filename: `destaques-${slug(team.normalizedName)}.png`, note: filterLabel }
   }
 }

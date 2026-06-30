@@ -4,8 +4,6 @@
  * Storage) de propósito — evita problemas de CORS/canvas tainted na
  * captura; usa o monograma do time.
  */
-import { forwardRef } from 'react'
-
 export interface StatCardRow {
   label?: string
   rank?: number
@@ -22,14 +20,11 @@ interface StatCardProps {
   note?: string
 }
 
-export const StatCard = forwardRef<HTMLDivElement, StatCardProps>(function StatCard(
-  { teamName, title, emoji, rows, note },
-  ref,
-) {
+// Captura é feita pelo wrapper em ShareCardModal — sem ref próprio aqui.
+export function StatCard({ teamName, title, emoji, rows, note }: StatCardProps) {
   const initial = teamName.trim().charAt(0).toUpperCase() || '?'
   return (
     <div
-      ref={ref}
       className="w-[340px] overflow-hidden rounded-2xl bg-gradient-to-br from-pitch-700 to-pitch-950 p-6 text-white"
       style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
     >
@@ -69,4 +64,4 @@ export const StatCard = forwardRef<HTMLDivElement, StatCardProps>(function StatC
       {note && <p className="mt-4 text-[11px] text-pitch-300">{note}</p>}
     </div>
   )
-})
+}
