@@ -28,9 +28,24 @@ você **não precisa de um Mac**. App id: **`app.clubmanager`**.
 3. No `codemagic.yaml` (workflow `ios-appstore`), ajuste:
    - `integrations.app_store_connect: CODEMAGIC_ASC_KEY` → use o **nome** que você deu à integração.
    - `APP_STORE_APPLE_ID: 0000000000` → o **Apple ID numérico** do passo 1.
-4. Crie o **grupo de variáveis `firebase`** com as `VITE_FIREBASE_*` (mesmas do `.env`)
+4. Crie o **grupo de variáveis `teamapp`** com as `VITE_FIREBASE_*` (mesmas do `.env`)
    e, opcional, `VITE_PUBLIC_BASE_URL`.
-5. **Commite `assets/icon.png`** (1024×1024) — ver §5.
+5. **Chave privada do certificado de distribuição** (obrigatório — a Apple exige
+   uma chave privada pra assinar). Gere **uma vez** uma chave RSA 2048 (PEM).
+   No Windows, abra o **Git Bash** (vem com o Git) e rode:
+   ```bash
+   ssh-keygen -t rsa -b 2048 -m PEM -f cert_key -q -N ""
+   ```
+   Isso cria o arquivo `cert_key` (a chave privada). Abra-o no Bloco de Notas,
+   **copie todo o conteúdo** (incluindo as linhas `-----BEGIN...`/`-----END...`)
+   e no Codemagic adicione no grupo **`teamapp`** uma variável **segura** chamada
+   **`CERTIFICATE_PRIVATE_KEY`** com esse conteúdo. Guarde o `cert_key` — é a sua
+   chave de assinatura; o Codemagic cria **um** certificado amarrado a ela e
+   reaproveita em todo build.
+   > ⚠️ A Apple limita certificados de distribuição (máx. 2 por conta). Se o
+   > `fetch-signing-files` reclamar de limite, revogue um certificado não usado
+   > em **Certificates, IDs & Profiles** no developer.apple.com e rode de novo.
+6. **Commite `assets/icon.png`** (1024×1024) — ver §5 do ícone.
 
 ## 4. Rodar o build
 - No Codemagic, rode o workflow **`iOS — App Store`**.

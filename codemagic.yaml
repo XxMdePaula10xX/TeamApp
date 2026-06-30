@@ -86,12 +86,16 @@ workflows:
       # culpado com o erro real — em vez de seguir e quebrar so no build-ipa.
       - name: Inicializar keychain
         script: keychain initialize
+      # Requer a variavel SEGURA CERTIFICATE_PRIVATE_KEY no grupo `teamapp`:
+      # uma chave RSA 2048 (PEM). O Codemagic cria/reutiliza um certificado de
+      # distribuicao amarrado a ela. Gere uma vez (ver docs/APPLE_STORE.md).
       - name: Buscar/criar certificado + perfil (App Store Connect)
         script: |
           set -ex
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --platform IOS \
             --type IOS_APP_STORE \
+            --certificate-key=@env:CERTIFICATE_PRIVATE_KEY \
             --create
       - name: Adicionar certificados ao keychain
         script: keychain add-certificates
