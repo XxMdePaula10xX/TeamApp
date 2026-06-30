@@ -47,13 +47,33 @@ export const useAuthStore = create<AuthState>(() => ({
  * bootstrap do app (`main.tsx`). Retorna a função de unsubscribe.
  */
 export function initAuthListener(): () => void {
-  return onAuthStateChanged(auth, (user) => {
-    useAuthStore.setState({ user, initializing: false })
-    // Garante o doc users/{uid} no primeiro login (fire-and-forget).
-    if (user) {
-      void ensureUserDoc(user).catch((err) => {
-        console.warn('[Club Manager] Falha ao criar/atualizar o doc do usuário:', err)
-      })
+  // Failsafe: se o Auth não emitir o estado inicial a tempo (ex.: persistência
+  // travada no WKWebView do iOS), não deixa o app preso em "Carregando…" —
+  // segue como deslogado, levando o usuário ao login/busca.
+  const failSafe = setTimeout(() => {
+    if (useAuthStore.getState().initializing) {
+      console.warn('[Club Manager] Auth demorou a inicializar; seguindo deslogado.')
+      useAuthStore.setState({ initializing: false })
     }
-  })
+  }, 5000)
+
+  return onAuthStateChanged(
+    auth,
+    (user) => {
+      clearTimeout(failSafe)
+      useAuthStore.setState({ user, initializing: false })
+      // Garante o doc users/{uid} no primeiro login (fire-and-forget).
+      if (user) {
+        void ensureUserDoc(user).catch((err) => {
+          console.warn('[Club Manager] Falha ao criar/atualizar o doc do usuário:', err)
+        })
+      }
+    },
+    (err) => {
+      // Erro ao inicializar o listener (config inválida, persistência, etc.).
+      clearTimeout(failSafe)
+      console.error('[Club Manager] Erro no listener de autenticação:', err)
+      useAuthStore.setState({ user: null, initializing: false })
+    },
+  )
 }

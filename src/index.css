@@ -60,7 +60,9 @@
   }
 
   .input {
-    @apply w-full rounded-lg border border-slate-300 px-3 py-2 text-sm
+    /* text-base (16px) é proposital: no iOS, focar um campo com fonte < 16px
+       dispara um auto-zoom que NÃO volta e quebra o layout (corta à direita). */
+    @apply w-full rounded-lg border border-slate-300 px-3 py-2 text-base
       focus:border-pitch-500 focus:outline-none focus:ring-1 focus:ring-pitch-500
       disabled:cursor-not-allowed disabled:bg-slate-100;
   }
@@ -71,5 +73,16 @@
 
   .btn-danger {
     @apply btn bg-red-600 text-white hover:bg-red-700;
+  }
+}
+
+/* Rede de segurança: no iOS, qualquer campo com fonte < 16px causa auto-zoom
+   ao focar (e o zoom não reverte, cortando o layout à direita). Força >= 16px
+   em todos os campos no iOS — vale também para inputs sem a classe .input. */
+@supports (-webkit-touch-callout: none) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']),
+  select,
+  textarea {
+    font-size: 16px;
   }
 }

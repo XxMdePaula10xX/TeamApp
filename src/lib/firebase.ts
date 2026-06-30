@@ -6,7 +6,13 @@
  * "lançar o placar no campo sem sinal" (PRD §3).
  */
 import { initializeApp, type FirebaseApp } from 'firebase/app'
-import { getAuth, type Auth } from 'firebase/auth'
+import {
+  browserLocalPersistence,
+  indexedDBLocalPersistence,
+  inMemoryPersistence,
+  initializeAuth,
+  type Auth,
+} from 'firebase/auth'
 import {
   initializeFirestore,
   persistentLocalCache,
@@ -35,7 +41,15 @@ if (import.meta.env.DEV && (!firebaseConfig.apiKey || firebaseConfig.apiKey === 
 
 export const app: FirebaseApp = initializeApp(firebaseConfig)
 
-export const auth: Auth = getAuth(app)
+/**
+ * Auth com cadeia de persistência explícita. No WKWebView do iOS (Capacitor)
+ * o IndexedDB às vezes trava/indisponível e o `getAuth` padrão pode nunca
+ * emitir o primeiro `onAuthStateChanged` — deixando o app preso em
+ * "Carregando…". Tentar IndexedDB → localStorage → memória evita o travamento.
+ */
+export const auth: Auth = initializeAuth(app, {
+  persistence: [indexedDBLocalPersistence, browserLocalPersistence, inMemoryPersistence],
+})
 
 /**
  * Firestore com cache local persistente (IndexedDB) e suporte a múltiplas
