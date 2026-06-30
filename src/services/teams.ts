@@ -31,6 +31,10 @@ export interface TeamInput {
   logoURL: string
   /** Cor primária do time (hex) ou null = cor padrão do app. */
   primaryColor: string | null
+  /** Cidade "Cidade - UF" (da lista) ou null. */
+  city: string | null
+  /** Telefone de contato (amistosos/treinos) ou null. */
+  phone: string | null
 }
 
 /**
@@ -59,6 +63,8 @@ export async function createTeam(ownerId: string, input: TeamInput): Promise<str
     normalizedName: normalizeName(input.name),
     logoURL: input.logoURL,
     primaryColor: input.primaryColor,
+    city: input.city,
+    phone: input.phone,
     foundedAt: input.foundedAt,
     ownerId,
     createdAt: serverTimestamp(),
@@ -73,6 +79,8 @@ export async function updateTeam(teamId: string, input: TeamInput): Promise<void
     normalizedName: normalizeName(input.name),
     logoURL: input.logoURL,
     primaryColor: input.primaryColor,
+    city: input.city,
+    phone: input.phone,
     foundedAt: input.foundedAt,
   })
 }

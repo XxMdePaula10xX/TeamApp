@@ -1,11 +1,21 @@
+import { useEffect } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
+import { useOnboardingStore } from '@/store/onboardingStore'
+import { OnboardingModal } from '@/components/OnboardingModal'
 
 /** Barra de navegação inferior (mobile-first) + topo com identidade. */
 export function Layout() {
   const user = useAuthStore((s) => s.user)
   const online = useOnlineStatus()
+  const seen = useOnboardingStore((s) => s.seen)
+  const openTutorial = useOnboardingStore((s) => s.openTutorial)
+
+  // Abre o tutorial automaticamente no primeiro acesso (logado).
+  useEffect(() => {
+    if (user && !seen) openTutorial()
+  }, [user, seen, openTutorial])
 
   return (
     <div className="mx-auto flex min-h-full max-w-2xl flex-col">
@@ -14,15 +24,25 @@ export function Layout() {
           <span aria-hidden>⚽</span>
           Pelada Manager
         </Link>
-        {user ? (
-          <Link to="/conta" className="btn-ghost text-xs">
-            ⚙️ Conta
-          </Link>
-        ) : (
-          <Link to="/login" className="btn-ghost text-xs">
-            Entrar
-          </Link>
-        )}
+        <div className="flex items-center gap-1">
+          <button
+            onClick={openTutorial}
+            className="btn-ghost text-xs"
+            aria-label="Ver tutorial"
+            title="Como usar o app"
+          >
+            ❔
+          </button>
+          {user ? (
+            <Link to="/conta" className="btn-ghost text-xs">
+              ⚙️ Conta
+            </Link>
+          ) : (
+            <Link to="/login" className="btn-ghost text-xs">
+              Entrar
+            </Link>
+          )}
+        </div>
       </header>
 
       {!online && (
@@ -39,6 +59,8 @@ export function Layout() {
         <NavTab to="/" label="Meus Times" icon="🛡️" end />
         <NavTab to="/buscar" label="Buscar" icon="🔎" />
       </nav>
+
+      <OnboardingModal />
     </div>
   )
 }

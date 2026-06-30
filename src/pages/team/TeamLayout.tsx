@@ -1,11 +1,9 @@
 import { useState } from 'react'
-import { Link, NavLink, Outlet, useNavigate, useParams } from 'react-router-dom'
+import { Link, NavLink, Outlet, useParams } from 'react-router-dom'
 import { useTeam } from '@/hooks/useTeams'
 import { useIsOwner } from '@/hooks/useIsOwner'
 import { useTeamTheme } from '@/hooks/useTeamTheme'
 import { useThemeStore } from '@/store/themeStore'
-import { deleteTeam } from '@/services/teams'
-import { recomputeTeamStats } from '@/services/games'
 import { Avatar } from '@/components/Avatar'
 import { ErrorState, Loading } from '@/components/states'
 import { timeSince } from '@/utils/dates'
@@ -15,12 +13,10 @@ import type { TeamOutletContext } from '@/hooks/useTeamOutlet'
 /** Página do time (PRD §7.4) — header + abas. Modo leitura é público. */
 export function TeamLayout() {
   const { teamId } = useParams()
-  const navigate = useNavigate()
   const { team, loading, error } = useTeam(teamId)
   const { isOwner } = useIsOwner(team, loading)
   const useTeamColors = useThemeStore((s) => s.useTeamColors)
   const toggleTeamColors = useThemeStore((s) => s.toggle)
-  const [busy, setBusy] = useState<null | 'delete' | 'recompute'>(null)
   const [notice, setNotice] = useState<string | null>(null)
 
   // Aplica a cor do time no tema enquanto esta página estiver montada.
@@ -37,34 +33,6 @@ export function TeamLayout() {
         </Link>
       </div>
     )
-
-  const onDelete = async () => {
-    if (busy) return
-    if (!window.confirm(`Excluir o time "${team.name}" e todos os seus dados? Esta ação é irreversível.`))
-      return
-    setBusy('delete')
-    try {
-      await deleteTeam(team.id)
-      navigate('/')
-    } catch (err) {
-      setNotice(err instanceof Error ? err.message : 'Falha ao excluir.')
-      setBusy(null)
-    }
-  }
-
-  const onRecompute = async () => {
-    if (busy) return
-    setBusy('recompute')
-    setNotice(null)
-    try {
-      await recomputeTeamStats(team.id)
-      setNotice('Estatísticas recalculadas.')
-    } catch (err) {
-      setNotice(err instanceof Error ? err.message : 'Falha ao recalcular.')
-    } finally {
-      setBusy(null)
-    }
-  }
 
   const onShare = async () => {
     const result = await shareLink(`${team.name} — Pelada Manager`, publicTeamUrl(team.id))
@@ -94,6 +62,17 @@ export function TeamLayout() {
         </button>
       </div>
 
+      {(team.city || team.phone) && (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-sm text-slate-600">
+          {team.city && (
+            <span className="flex items-center gap-1">
+              <span aria-hidden>📍</span> {team.city}
+            </span>
+          )}
+          {team.phone && <ContactPhone phone={team.phone} />}
+        </div>
+      )}
+
       {team.primaryColor && (
         <button
           onClick={toggleTeamColors}
@@ -112,18 +91,8 @@ export function TeamLayout() {
       {isOwner && (
         <div className="flex flex-wrap gap-2">
           <Link to={`/time/${team.id}/editar`} className="btn-ghost border border-slate-300 text-xs">
-            ✏️ Editar
+            ✏️ Editar time
           </Link>
-          <button
-            onClick={onRecompute}
-            disabled={busy !== null}
-            className="btn-ghost border border-slate-300 text-xs"
-          >
-            {busy === 'recompute' ? 'Recalculando…' : '🔄 Recalcular estatísticas'}
-          </button>
-          <button onClick={onDelete} disabled={busy !== null} className="btn-ghost text-xs text-red-600">
-            🗑️ Excluir
-          </button>
         </div>
       )}
 
@@ -154,5 +123,30 @@ function TeamTab({ to, label, end }: { to: string; label: string; end?: boolean 
     >
       {label}
     </NavLink>
+  )
+}
+
+/** Telefone de contato com link de WhatsApp (para marcar amistosos/treinos). */
+function ContactPhone({ phone }: { phone: string }) {
+  const digits = phone.replace(/\D/g, '')
+  // Prefixa 55 (Brasil) se vier sem código do país (10–11 dígitos).
+  const wa = digits.length >= 12 ? digits : `55${digits}`
+  if (digits.length < 10) {
+    return (
+      <span className="flex items-center gap-1">
+        <span aria-hidden>📞</span> {phone}
+      </span>
+    )
+  }
+  return (
+    <a
+      href={`https://wa.me/${wa}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center gap-1 font-medium text-pitch-700 hover:underline"
+      title="Chamar no WhatsApp para amistosos/treinos"
+    >
+      <span aria-hidden>📞</span> {phone}
+    </a>
   )
 }

@@ -95,6 +95,10 @@ export interface TeamDoc {
   logoURL: string
   /** Cor primária do time (hex, ex.: '#dc2626') ou null = cor padrão do app. */
   primaryColor: string | null
+  /** Cidade no formato "Cidade - UF" (escolhida de lista) ou null. */
+  city: string | null
+  /** Telefone de contato p/ marcar amistosos/treinos (texto livre) ou null. */
+  phone: string | null
   foundedAt: Timestamp | null
   ownerId: string
   createdAt: Timestamp

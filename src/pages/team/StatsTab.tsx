@@ -140,10 +140,12 @@ export function StatsTab() {
         <Section title="Gols por jogador">
           <Suspense fallback={<ChartFallback />}>
             <PlayerBars
+              showAvatars
               data={scorers.slice(0, 10).map((r) => ({
                 id: r.player.id,
                 name: firstName(r.player.name),
                 value: r.stats.goals,
+                photo: r.player.photoURL || undefined,
               }))}
               color="#16a34a"
             />

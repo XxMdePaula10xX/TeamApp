@@ -3,10 +3,12 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { useTeam } from '@/hooks/useTeams'
 import { useIsOwner } from '@/hooks/useIsOwner'
-import { createTeam, updateTeam } from '@/services/teams'
+import { createTeam, deleteTeam, updateTeam } from '@/services/teams'
+import { recomputeTeamStats } from '@/services/games'
 import { uploadImage } from '@/services/storage'
 import { dateInputToTimestamp, timestampToDateInput } from '@/utils/dates'
 import { Avatar } from '@/components/Avatar'
+import { CityCombobox } from '@/components/CityCombobox'
 import { ErrorState, Loading } from '@/components/states'
 
 /** Cores rápidas (hex minúsculo, p/ casar com o valor do input color). */
@@ -24,8 +26,12 @@ export function TeamFormPage({ mode }: { mode: 'create' | 'edit' }) {
   const [name, setName] = useState('')
   const [foundedAt, setFoundedAt] = useState('')
   const [primaryColor, setPrimaryColor] = useState<string | null>(null)
+  const [city, setCity] = useState<string | null>(null)
+  const [phone, setPhone] = useState('')
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [existingLogo, setExistingLogo] = useState('')
+  const [maintBusy, setMaintBusy] = useState<null | 'delete' | 'recompute'>(null)
+  const [maintNotice, setMaintNotice] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
@@ -38,6 +44,8 @@ export function TeamFormPage({ mode }: { mode: 'create' | 'edit' }) {
       setName(team.name)
       setFoundedAt(timestampToDateInput(team.foundedAt))
       setPrimaryColor(team.primaryColor ?? null)
+      setCity(team.city ?? null)
+      setPhone(team.phone ?? '')
       setExistingLogo(team.logoURL)
     }
   }, [mode, team])
@@ -76,13 +84,15 @@ export function TeamFormPage({ mode }: { mode: 'create' | 'edit' }) {
     setBusy(true)
     try {
       const foundedTs = dateInputToTimestamp(foundedAt)
+      const phoneClean = phone.trim() || null
+      const base = { name, foundedAt: foundedTs, primaryColor, city, phone: phoneClean }
       const id =
         mode === 'create'
-          ? await createTeam(uid, { name, foundedAt: foundedTs, logoURL: '', primaryColor })
+          ? await createTeam(uid, { ...base, logoURL: '' })
           : teamId!
 
       if (mode === 'edit') {
-        await updateTeam(id, { name, foundedAt: foundedTs, logoURL: existingLogo, primaryColor })
+        await updateTeam(id, { ...base, logoURL: existingLogo })
       }
 
       // Upload da logo é OPCIONAL e desacoplado (Storage não funciona
@@ -90,7 +100,7 @@ export function TeamFormPage({ mode }: { mode: 'create' | 'edit' }) {
       if (logoFile) {
         try {
           const url = await uploadImage(`teams/${uid}/${id}`, 'logo', logoFile)
-          await updateTeam(id, { name, foundedAt: foundedTs, logoURL: url, primaryColor })
+          await updateTeam(id, { ...base, logoURL: url })
         } catch {
           setNotice('Time salvo, mas não foi possível enviar a logo agora. Tente de novo com conexão.')
         }
@@ -100,6 +110,39 @@ export function TeamFormPage({ mode }: { mode: 'create' | 'edit' }) {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Não foi possível salvar o time.')
       setBusy(false)
+    }
+  }
+
+  const onRecompute = async () => {
+    if (!teamId || maintBusy) return
+    setMaintBusy('recompute')
+    setMaintNotice(null)
+    try {
+      await recomputeTeamStats(teamId)
+      setMaintNotice('Estatísticas recalculadas.')
+    } catch (err) {
+      setMaintNotice(err instanceof Error ? err.message : 'Falha ao recalcular.')
+    } finally {
+      setMaintBusy(null)
+    }
+  }
+
+  const onDeleteTeam = async () => {
+    if (!teamId || maintBusy) return
+    if (
+      !window.confirm(
+        `Excluir o time "${name || 'sem nome'}" e TODOS os dados (jogadores, jogos, estatísticas)? Esta ação é irreversível.`,
+      )
+    )
+      return
+    setMaintBusy('delete')
+    setMaintNotice(null)
+    try {
+      await deleteTeam(teamId)
+      navigate('/')
+    } catch (err) {
+      setMaintNotice(err instanceof Error ? err.message : 'Falha ao excluir.')
+      setMaintBusy(null)
     }
   }
 
@@ -191,6 +234,29 @@ export function TeamFormPage({ mode }: { mode: 'create' | 'edit' }) {
           </button>
         </div>
 
+        <div>
+          <span className="label">Cidade</span>
+          <CityCombobox value={city} onChange={setCity} />
+        </div>
+
+        <div>
+          <label className="label" htmlFor="phone">
+            Telefone de contato
+          </label>
+          <input
+            id="phone"
+            type="tel"
+            inputMode="tel"
+            className="input"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="(11) 90000-0000"
+          />
+          <p className="mt-1 text-xs text-slate-500">
+            Para marcação de amistosos ou treinos. Fica visível na página pública do time.
+          </p>
+        </div>
+
         {error && <p className="text-sm text-red-600">{error}</p>}
         {notice && <p className="text-sm text-amber-600">{notice}</p>}
 
@@ -203,6 +269,48 @@ export function TeamFormPage({ mode }: { mode: 'create' | 'edit' }) {
           </button>
         </div>
       </form>
+
+      {mode === 'edit' && (
+        <>
+          <div className="card space-y-2">
+            <h2 className="text-sm font-semibold text-slate-700">Manutenção</h2>
+            <p className="text-xs text-slate-500">
+              Recalcula as estatísticas do zero a partir de todos os jogos (use se algum número
+              parecer inconsistente).
+            </p>
+            <button
+              type="button"
+              onClick={onRecompute}
+              disabled={maintBusy !== null}
+              className="btn-ghost border border-slate-300 text-sm"
+            >
+              {maintBusy === 'recompute' ? 'Recalculando…' : '🔄 Recalcular estatísticas'}
+            </button>
+          </div>
+
+          <details className="card border-red-200">
+            <summary className="cursor-pointer text-sm font-semibold text-red-600">
+              Zona de perigo
+            </summary>
+            <div className="mt-3 space-y-2">
+              <p className="text-xs text-slate-500">
+                Excluir o time apaga <strong>permanentemente</strong> jogadores, jogos e
+                estatísticas. Não dá para desfazer.
+              </p>
+              <button
+                type="button"
+                onClick={onDeleteTeam}
+                disabled={maintBusy !== null}
+                className="btn-danger w-full"
+              >
+                {maintBusy === 'delete' ? 'Excluindo…' : '🗑️ Excluir time'}
+              </button>
+            </div>
+          </details>
+
+          {maintNotice && <p className="text-sm text-slate-500">{maintNotice}</p>}
+        </>
+      )}
     </div>
   )
 }
