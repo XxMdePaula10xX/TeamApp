@@ -46,15 +46,27 @@ workflows:
       - android/app/build/outputs/**/*.apk
       - android/app/build/outputs/**/*.aab
 
-  # ── iOS ──────────────────────────────────────────────────
-  ios-build:
-    name: iOS Build
+  # ── iOS — App Store (assinatura automática + TestFlight) ──
+  # PRÉ-REQUISITOS (configurar no painel do Codemagic, ver docs/APPLE_STORE.md):
+  #   1. Integração App Store Connect (chave da API) — troque CODEMAGIC_ASC_KEY
+  #      pelo NOME que você deu à integração.
+  #   2. Variável APP_STORE_APPLE_ID = o "Apple ID" numérico do app
+  #      (App Store Connect > seu app > App Information).
+  #   3. assets/icon.png (1024x1024) commitado, para gerar o ícone.
+  ios-appstore:
+    name: iOS — App Store
     instance_type: mac_mini_m2
-    max_build_duration: 60
+    max_build_duration: 90
+    integrations:
+      app_store_connect: CODEMAGIC_ASC_KEY
     environment:
       groups:
         - firebase
-        - appstore
+      vars:
+        BUNDLE_ID: 'app.peladamanager'
+        APP_STORE_APPLE_ID: 0000000000 # <- troque pelo Apple ID numérico do app
+        XCODE_WORKSPACE: 'ios/App/App.xcworkspace'
+        XCODE_SCHEME: 'App'
       node: 22
       xcode: latest
       cocoapods: default
@@ -64,14 +76,34 @@ workflows:
       - name: Adicionar plataforma iOS (se ausente)
         script: |
           [ -d ios ] || npx cap add ios
-      - *cap_sync
-      - name: Build do app iOS (placeholder do Sprint 0)
+      - name: Gerar ícones/splash
+        script: |
+          npx @capacitor/assets@latest generate --ios || echo "Sem assets/icon.png — usando ícone padrão."
+      - name: Capacitor sync (instala os Pods)
+        script: npx cap sync ios
+      - name: Assinatura automática (App Store Connect)
+        script: |
+          keychain initialize
+          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create
+          keychain add-certificates
+          xcode-project use-profiles
+      - name: Incrementar build number
+        script: |
+          LATEST=$(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo 0)
+          cd ios/App
+          agvtool new-version -all $((LATEST + 1))
+      - name: Build do .ipa (release)
         script: |
           xcode-project build-ipa \
-            --project "ios/App/App.xcodeproj" \
-            --scheme "App" || echo "Configurar code signing antes do build de release."
+            --workspace "$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME"
     artifacts:
       - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
 
   # ── Web (deploy estático opcional via Firebase Hosting) ──
   web-build:
