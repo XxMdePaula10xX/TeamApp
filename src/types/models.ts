@@ -93,6 +93,8 @@ export interface TeamDoc {
   /** lowercase sem acento — usado em `where('normalizedName', '>=', termo)`. */
   normalizedName: string
   logoURL: string
+  /** Cor primária do time (hex, ex.: '#dc2626') ou null = cor padrão do app. */
+  primaryColor: string | null
   foundedAt: Timestamp | null
   ownerId: string
   createdAt: Timestamp

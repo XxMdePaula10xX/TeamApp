@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Link, NavLink, Outlet, useNavigate, useParams } from 'react-router-dom'
 import { useTeam } from '@/hooks/useTeams'
 import { useIsOwner } from '@/hooks/useIsOwner'
+import { useTeamTheme } from '@/hooks/useTeamTheme'
+import { useThemeStore } from '@/store/themeStore'
 import { deleteTeam } from '@/services/teams'
 import { recomputeTeamStats } from '@/services/games'
 import { Avatar } from '@/components/Avatar'
@@ -16,8 +18,13 @@ export function TeamLayout() {
   const navigate = useNavigate()
   const { team, loading, error } = useTeam(teamId)
   const { isOwner } = useIsOwner(team, loading)
+  const useTeamColors = useThemeStore((s) => s.useTeamColors)
+  const toggleTeamColors = useThemeStore((s) => s.toggle)
   const [busy, setBusy] = useState<null | 'delete' | 'recompute'>(null)
   const [notice, setNotice] = useState<string | null>(null)
+
+  // Aplica a cor do time no tema enquanto esta página estiver montada.
+  useTeamTheme(team)
 
   if (loading) return <Loading />
   if (error) return <ErrorState error={error} />
@@ -86,6 +93,21 @@ export function TeamLayout() {
           🔗 Compartilhar
         </button>
       </div>
+
+      {team.primaryColor && (
+        <button
+          onClick={toggleTeamColors}
+          aria-pressed={useTeamColors}
+          className={`inline-flex items-center gap-2 self-start rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+            useTeamColors
+              ? 'border-pitch-500 bg-pitch-50 text-pitch-700'
+              : 'border-slate-300 text-slate-500'
+          }`}
+        >
+          <span className="h-3 w-3 rounded-full" style={{ backgroundColor: team.primaryColor }} />
+          {useTeamColors ? 'Cores do time' : 'Cor padrão do app'}
+        </button>
+      )}
 
       {isOwner && (
         <div className="flex flex-wrap gap-2">

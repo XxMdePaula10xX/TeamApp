@@ -9,6 +9,9 @@ import { dateInputToTimestamp, timestampToDateInput } from '@/utils/dates'
 import { Avatar } from '@/components/Avatar'
 import { ErrorState, Loading } from '@/components/states'
 
+/** Cores rápidas (hex minúsculo, p/ casar com o valor do input color). */
+const COLOR_PRESETS = ['#16a34a', '#dc2626', '#2563eb', '#0ea5e9', '#f59e0b', '#9333ea', '#0f172a']
+
 /** Criar/Editar time (PRD §7.3). */
 export function TeamFormPage({ mode }: { mode: 'create' | 'edit' }) {
   const { teamId } = useParams()
@@ -20,6 +23,7 @@ export function TeamFormPage({ mode }: { mode: 'create' | 'edit' }) {
 
   const [name, setName] = useState('')
   const [foundedAt, setFoundedAt] = useState('')
+  const [primaryColor, setPrimaryColor] = useState<string | null>(null)
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [existingLogo, setExistingLogo] = useState('')
   const [busy, setBusy] = useState(false)
@@ -33,6 +37,7 @@ export function TeamFormPage({ mode }: { mode: 'create' | 'edit' }) {
       hydrated.current = true
       setName(team.name)
       setFoundedAt(timestampToDateInput(team.foundedAt))
+      setPrimaryColor(team.primaryColor ?? null)
       setExistingLogo(team.logoURL)
     }
   }, [mode, team])
@@ -73,11 +78,11 @@ export function TeamFormPage({ mode }: { mode: 'create' | 'edit' }) {
       const foundedTs = dateInputToTimestamp(foundedAt)
       const id =
         mode === 'create'
-          ? await createTeam(uid, { name, foundedAt: foundedTs, logoURL: '' })
+          ? await createTeam(uid, { name, foundedAt: foundedTs, logoURL: '', primaryColor })
           : teamId!
 
       if (mode === 'edit') {
-        await updateTeam(id, { name, foundedAt: foundedTs, logoURL: existingLogo })
+        await updateTeam(id, { name, foundedAt: foundedTs, logoURL: existingLogo, primaryColor })
       }
 
       // Upload da logo é OPCIONAL e desacoplado (Storage não funciona
@@ -85,7 +90,7 @@ export function TeamFormPage({ mode }: { mode: 'create' | 'edit' }) {
       if (logoFile) {
         try {
           const url = await uploadImage(`teams/${uid}/${id}`, 'logo', logoFile)
-          await updateTeam(id, { name, foundedAt: foundedTs, logoURL: url })
+          await updateTeam(id, { name, foundedAt: foundedTs, logoURL: url, primaryColor })
         } catch {
           setNotice('Time salvo, mas não foi possível enviar a logo agora. Tente de novo com conexão.')
         }
@@ -144,6 +149,46 @@ export function TeamFormPage({ mode }: { mode: 'create' | 'edit' }) {
             value={foundedAt}
             onChange={(e) => setFoundedAt(e.target.value)}
           />
+        </div>
+
+        <div>
+          <span className="label">Cor do time</span>
+          <div className="flex items-center gap-3">
+            <label
+              className="h-10 w-10 shrink-0 cursor-pointer rounded-lg border border-slate-300"
+              style={{ backgroundColor: primaryColor ?? '#16a34a' }}
+              title="Escolher cor"
+            >
+              <input
+                type="color"
+                className="sr-only"
+                value={primaryColor ?? '#16a34a'}
+                onChange={(e) => setPrimaryColor(e.target.value)}
+                aria-label="Cor do time"
+              />
+            </label>
+            <div className="flex flex-wrap gap-1.5">
+              {COLOR_PRESETS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setPrimaryColor(c)}
+                  aria-label={`Cor ${c}`}
+                  className={`h-7 w-7 rounded-full border-2 ${
+                    primaryColor?.toLowerCase() === c ? 'border-slate-700' : 'border-white shadow'
+                  }`}
+                  style={{ backgroundColor: c }}
+                />
+              ))}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setPrimaryColor(null)}
+            className="mt-2 text-xs font-medium text-slate-500 hover:text-slate-700"
+          >
+            {primaryColor ? '↺ Usar cor padrão do app' : 'Usando a cor padrão do app'}
+          </button>
         </div>
 
         {error && <p className="text-sm text-red-600">{error}</p>}

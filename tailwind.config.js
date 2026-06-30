@@ -4,19 +4,21 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Identidade visual "campo de futebol"
+        // Paleta temática via CSS variables (default = verde "campo de
+        // futebol"); pode ser sobrescrita em runtime pela cor do time.
+        // Ver src/index.css (:root) e src/utils/theme.ts.
         pitch: {
-          50: '#f0fdf4',
-          100: '#dcfce7',
-          200: '#bbf7d0',
-          300: '#86efac',
-          400: '#4ade80',
-          500: '#22c55e',
-          600: '#16a34a',
-          700: '#15803d',
-          800: '#166534',
-          900: '#14532d',
-          950: '#052e16',
+          50: 'rgb(var(--pitch-50) / <alpha-value>)',
+          100: 'rgb(var(--pitch-100) / <alpha-value>)',
+          200: 'rgb(var(--pitch-200) / <alpha-value>)',
+          300: 'rgb(var(--pitch-300) / <alpha-value>)',
+          400: 'rgb(var(--pitch-400) / <alpha-value>)',
+          500: 'rgb(var(--pitch-500) / <alpha-value>)',
+          600: 'rgb(var(--pitch-600) / <alpha-value>)',
+          700: 'rgb(var(--pitch-700) / <alpha-value>)',
+          800: 'rgb(var(--pitch-800) / <alpha-value>)',
+          900: 'rgb(var(--pitch-900) / <alpha-value>)',
+          950: 'rgb(var(--pitch-950) / <alpha-value>)',
         },
       },
       fontFamily: {

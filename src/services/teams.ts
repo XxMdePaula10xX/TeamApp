@@ -29,6 +29,8 @@ export interface TeamInput {
   foundedAt: Timestamp | null
   /** URL já enviada ao Storage (ou '' / a atual ao editar sem trocar). */
   logoURL: string
+  /** Cor primária do time (hex) ou null = cor padrão do app. */
+  primaryColor: string | null
 }
 
 /**
@@ -56,6 +58,7 @@ export async function createTeam(ownerId: string, input: TeamInput): Promise<str
     name: input.name.trim(),
     normalizedName: normalizeName(input.name),
     logoURL: input.logoURL,
+    primaryColor: input.primaryColor,
     foundedAt: input.foundedAt,
     ownerId,
     createdAt: serverTimestamp(),
@@ -69,6 +72,7 @@ export async function updateTeam(teamId: string, input: TeamInput): Promise<void
     name: input.name.trim(),
     normalizedName: normalizeName(input.name),
     logoURL: input.logoURL,
+    primaryColor: input.primaryColor,
     foundedAt: input.foundedAt,
   })
 }
