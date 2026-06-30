@@ -2,7 +2,7 @@
 # Codemagic CI/CD — Club Manager (Vite + React + Capacitor)
 #
 # Pré-requisitos a configurar no Codemagic:
-#   - Grupo de variáveis `firebase` com as VITE_FIREBASE_* (build web).
+#   - Grupo de variáveis `teamapp` com as VITE_FIREBASE_* (build web).
 #   - Grupo `google_play` com credenciais de publicação (Android).
 #   - Grupo `appstore` + code signing (iOS).
 # Os workflows abaixo cobrem o "build vazio nas duas lojas" do Sprint 0.
@@ -28,7 +28,7 @@ workflows:
     max_build_duration: 60
     environment:
       groups:
-        - firebase
+        - teamapp
         - google_play
       node: 22
     scripts:
@@ -51,7 +51,7 @@ workflows:
   #   1. Integração App Store Connect — usando a chave "quantum_asc" já
   #      existente (Team settings > Integrations > Apple Developer Portal).
   #      Se preferir a outra ("CatMatch API Key"), troque o nome abaixo.
-  #   2. Grupo de variáveis `firebase` com as VITE_FIREBASE_*.
+  #   2. Grupo de variáveis `teamapp` com as VITE_FIREBASE_*.
   #   3. assets/icon.png (1024x1024) commitado, para gerar o ícone.
   ios-appstore:
     name: iOS — App Store
@@ -61,7 +61,7 @@ workflows:
       app_store_connect: quantum_asc
     environment:
       groups:
-        - firebase
+        - teamapp
       vars:
         BUNDLE_ID: 'app.clubmanager'
         APP_STORE_APPLE_ID: 6786035073
@@ -112,7 +112,7 @@ workflows:
     max_build_duration: 30
     environment:
       groups:
-        - firebase
+        - teamapp
       node: 22
     scripts:
       - *install_deps
