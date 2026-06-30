@@ -125,10 +125,11 @@ export function StatsTab() {
         <FilterBtn label="Campeonato" active={filter === 'CAMPEONATO'} onClick={() => setFilter('CAMPEONATO')} />
       </div>
 
-      {filter !== 'TODOS' && (games?.length ?? 0) === GAMES_LIMIT && (
+      {(games?.length ?? 0) === GAMES_LIMIT && (
         <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
-          Mostrando apenas os {GAMES_LIMIT} jogos mais recentes deste tipo — os totais podem ser
-          maiores em “Todos”.
+          {filter !== 'TODOS'
+            ? `Mostrando apenas os ${GAMES_LIMIT} jogos mais recentes deste tipo — os totais podem ser maiores em “Todos”.`
+            : `Comparação e retrospecto consideram os ${GAMES_LIMIT} jogos mais recentes — podem não cobrir todo o histórico.`}
         </p>
       )}
 

@@ -20,6 +20,10 @@ if (splash) {
   // Pequeno atraso garante o 1º paint do app antes do fade.
   setTimeout(() => {
     splash.classList.add('splash--hidden')
-    splash.addEventListener('transitionend', () => splash.remove(), { once: true })
+    const done = () => splash.remove() // remove() é idempotente
+    splash.addEventListener('transitionend', done, { once: true })
+    // Fallback: se o transitionend não disparar (ex.: aba em background,
+    // transição interrompida), remove mesmo assim após a duração do fade.
+    setTimeout(done, 600)
   }, 350)
 }

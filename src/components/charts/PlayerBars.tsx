@@ -61,6 +61,10 @@ export default function PlayerBars({
               <img
                 src={photo}
                 alt=""
+                onError={(e) => {
+                  // Foto quebrada (offline/removida): esconde sem poluir o eixo.
+                  e.currentTarget.style.display = 'none'
+                }}
                 style={{ width: 22, height: 22, borderRadius: '9999px', objectFit: 'cover', flexShrink: 0 }}
               />
             ) : (
