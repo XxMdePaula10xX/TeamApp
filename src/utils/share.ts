@@ -13,7 +13,9 @@ export function publicBaseUrl(): string {
 }
 
 export function publicTeamUrl(teamId: string): string {
-  return `${publicBaseUrl()}/time/${teamId}`
+  // No GitHub Pages (hash router) os links públicos precisam do `#`.
+  const hash = import.meta.env.VITE_ROUTER === 'hash' ? '/#' : ''
+  return `${publicBaseUrl()}${hash}/time/${teamId}`
 }
 
 export type ShareResult = 'shared' | 'copied' | 'cancelled' | 'failed'

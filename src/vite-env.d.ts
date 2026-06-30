@@ -10,6 +10,8 @@ interface ImportMetaEnv {
   readonly VITE_FIREBASE_MEASUREMENT_ID?: string
   /** Base dos links compartilháveis (ex.: https://seuapp.web.app). */
   readonly VITE_PUBLIC_BASE_URL?: string
+  /** 'hash' usa createHashRouter (GitHub Pages); senão browser router. */
+  readonly VITE_ROUTER?: string
 }
 
 interface ImportMeta {

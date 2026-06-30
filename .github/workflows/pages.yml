@@ -1,0 +1,54 @@
+# Deploy do app (Vite) no GitHub Pages.
+# Pré-requisitos (ver docs/GITHUB_PAGES.md):
+#   - Settings → Pages → Source: "GitHub Actions".
+#   - Um arquivo .env.production COMMITADO com as VITE_FIREBASE_* (as chaves
+#     Web do Firebase são seguras de expor). Sem ele, o app abre mas o login
+#     e os dados não funcionam.
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches: [main] # ajuste se o branch padrão do seu repo for outro
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build
+        env:
+          # base = "/nome-do-repo/" (Pages serve em usuario.github.io/repo/)
+          VITE_BASE: /${{ github.event.repository.name }}/
+          # GitHub Pages não tem rewrites → hash router evita 404 em deep links.
+          VITE_ROUTER: hash
+          # Links de compartilhar/QR apontam para o domínio público do Pages.
+          VITE_PUBLIC_BASE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+        run: npm run build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

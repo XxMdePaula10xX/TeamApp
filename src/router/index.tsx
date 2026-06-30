@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { createBrowserRouter, createHashRouter, Navigate } from 'react-router-dom'
 import { Layout } from '@/components/Layout'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { LoginPage } from '@/pages/LoginPage'
@@ -20,10 +20,14 @@ import { StatsTab } from '@/pages/team/StatsTab'
 /**
  * Rotas (PRD §7). Telas públicas: /login, /buscar e a página do time
  * (modo leitura). Rotas de edição ficam atrás de <ProtectedRoute>.
- * Conteúdo das páginas é placeholder no Sprint 0 — preenchido nos
- * Sprints 1–3.
+ *
+ * Em VITE_ROUTER=hash usa createHashRouter (URLs com `#`) — necessário no
+ * GitHub Pages, que não tem rewrites de servidor. Caso contrário, usa
+ * createBrowserRouter (URLs limpas; Firebase Hosting faz o rewrite).
  */
-export const router = createBrowserRouter([
+const createRouter = import.meta.env.VITE_ROUTER === 'hash' ? createHashRouter : createBrowserRouter
+
+export const router = createRouter([
   { path: '/login', element: <LoginPage /> },
   {
     path: '/',
