@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { Link, NavLink, Outlet, useParams } from 'react-router-dom'
 import { useTeam } from '@/hooks/useTeams'
 import { useIsOwner } from '@/hooks/useIsOwner'
@@ -11,6 +11,8 @@ import { timeSince } from '@/utils/dates'
 import { publicTeamUrl, shareLink } from '@/utils/share'
 import type { TeamOutletContext } from '@/hooks/useTeamOutlet'
 
+const QrModal = lazy(() => import('@/components/QrModal'))
+
 /** Página do time (PRD §7.4) — header + abas. Modo leitura é público. */
 export function TeamLayout() {
   const { teamId } = useParams()
@@ -19,6 +21,7 @@ export function TeamLayout() {
   const useTeamColors = useThemeStore((s) => s.useTeamColors)
   const toggleTeamColors = useThemeStore((s) => s.toggle)
   const [notice, setNotice] = useState<string | null>(null)
+  const [qrOpen, setQrOpen] = useState(false)
 
   // Aplica a cor do time no tema enquanto esta página estiver montada.
   useTeamTheme(team)
@@ -62,13 +65,22 @@ export function TeamLayout() {
             size={44}
           />
         )}
-        <button
-          onClick={onShare}
-          className="btn-ghost shrink-0 border border-slate-300 text-xs"
-          aria-label="Compartilhar time"
-        >
-          🔗 Compartilhar
-        </button>
+        <div className="flex shrink-0 flex-col gap-1">
+          <button
+            onClick={onShare}
+            className="btn-ghost border border-slate-300 text-xs"
+            aria-label="Compartilhar time"
+          >
+            🔗 Compartilhar
+          </button>
+          <button
+            onClick={() => setQrOpen(true)}
+            className="btn-ghost border border-slate-300 text-xs"
+            aria-label="Mostrar QR Code do time"
+          >
+            ▦ QR Code
+          </button>
+        </div>
       </div>
 
       {(team.city || team.phone) && (
@@ -116,6 +128,12 @@ export function TeamLayout() {
       </nav>
 
       <Outlet context={context} />
+
+      {qrOpen && (
+        <Suspense fallback={null}>
+          <QrModal url={publicTeamUrl(team.id)} title={`${team.name} — Pelada Manager`} onClose={() => setQrOpen(false)} />
+        </Suspense>
+      )}
     </div>
   )
 }
