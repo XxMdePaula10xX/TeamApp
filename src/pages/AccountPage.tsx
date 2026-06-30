@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { deleteAccount } from '@/services/account'
+import { PRIVACY_POLICY_URL } from '@/config'
 
 /** Configurações da conta: sair e excluir conta (e-mail/senha). */
 export function AccountPage() {
@@ -100,6 +101,15 @@ export function AccountPage() {
           </form>
         )}
       </div>
+
+      <a
+        href={PRIVACY_POLICY_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block text-center text-xs text-slate-400 hover:text-slate-600"
+      >
+        Política de privacidade
+      </a>
     </div>
   )
 }

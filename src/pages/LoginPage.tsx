@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
+import { PRIVACY_POLICY_URL } from '@/config'
 
 type Mode = 'signin' | 'signup' | 'reset'
 
@@ -149,6 +150,15 @@ export function LoginPage() {
       <Link to="/buscar" className="text-center text-sm font-medium text-slate-500 hover:text-slate-700">
         Continuar sem conta → buscar um time
       </Link>
+
+      <a
+        href={PRIVACY_POLICY_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-center text-xs text-slate-400 hover:text-slate-600"
+      >
+        Política de privacidade
+      </a>
     </div>
   )
 }
