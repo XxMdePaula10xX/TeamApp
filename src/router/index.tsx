@@ -4,6 +4,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { LoginPage } from '@/pages/LoginPage'
 import { HomePage } from '@/pages/HomePage'
 import { AccountPage } from '@/pages/AccountPage'
+import { NotificationsPage } from '@/pages/NotificationsPage'
 import { SearchPage } from '@/pages/SearchPage'
 import { TeamFormPage } from '@/pages/TeamFormPage'
 import { PlayerFormPage } from '@/pages/PlayerFormPage'
@@ -46,6 +47,16 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <AccountPage />
+          </ProtectedRoute>
+        ),
+      },
+
+      // Notificações (exige login).
+      {
+        path: 'notificacoes',
+        element: (
+          <ProtectedRoute>
+            <NotificationsPage />
           </ProtectedRoute>
         ),
       },

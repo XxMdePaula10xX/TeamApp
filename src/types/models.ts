@@ -98,6 +98,19 @@ export interface UserDoc {
   email: string
   photoURL: string
   createdAt: Timestamp
+  /** Quando o usuário viu as notificações pela última vez (zera o badge). */
+  lastSeenNotificationsAt?: Timestamp | null
+}
+
+/** Notificação in-app (users/{uid}/notifications). */
+export interface NotificationDoc {
+  type: string
+  emoji: string
+  title: string
+  body: string
+  /** Time relacionado (para link), se houver. */
+  teamId: string | null
+  createdAt: Timestamp
 }
 
 export interface TeamDoc {
@@ -189,3 +202,4 @@ export type Team = WithId<TeamDoc>
 export type Player = WithId<PlayerDoc>
 export type Competition = WithId<CompetitionDoc>
 export type Game = WithId<GameDoc>
+export type AppNotification = WithId<NotificationDoc>

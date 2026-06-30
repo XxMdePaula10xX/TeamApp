@@ -10,6 +10,7 @@ import { createGame, updateGame, GameValidationError, type GameInput } from '@/s
 import { findCompetitionByName } from '@/services/competitions'
 import { celebrateWin } from '@/utils/celebrate'
 import { playerLabel } from '@/utils/players'
+import { notifyGameSaved } from '@/services/notifications'
 import { dateInputToTimestamp, timestampToDateInput } from '@/utils/dates'
 import { Loading } from '@/components/states'
 import type { GameEvent, GameType, HomeAway } from '@/types/models'
@@ -247,11 +248,19 @@ export function GameFormPage({ mode }: { mode: 'create' | 'edit' }) {
     try {
       if (mode === 'create') {
         await createGame(teamId, uid, input, players ?? [])
+        // Comemora vitória + gera notificações (best-effort, não bloqueia).
+        if (draft.scoreFor > draft.scoreAgainst) void celebrateWin()
+        void notifyGameSaved(uid, teamId, {
+          teamName: team?.name ?? '',
+          opponent: input.opponent,
+          scoreFor: input.scoreFor,
+          scoreAgainst: input.scoreAgainst,
+          events: input.events,
+          players: players ?? [],
+        }).catch(() => {})
       } else if (game) {
         await updateGame(teamId, game.id, uid, game, input, players ?? [])
       }
-      // Comemora vitória (confete) ao salvar um novo jogo.
-      if (mode === 'create' && draft.scoreFor > draft.scoreAgainst) void celebrateWin()
       navigate(`/time/${teamId}/jogos`)
     } catch (err) {
       const msg =

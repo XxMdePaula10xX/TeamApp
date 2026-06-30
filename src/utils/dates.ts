@@ -26,6 +26,20 @@ export function timestampToDateInput(ts: Timestamp | null | undefined): string {
   return `${yyyy}-${mm}-${dd}`
 }
 
+/** Tempo relativo curto em pt-BR (ex.: "agora", "há 5 min", "há 2 h", "há 3 d"). */
+export function timeAgo(ts: Timestamp | null | undefined): string {
+  if (!ts) return ''
+  const diffMs = Date.now() - ts.toDate().getTime()
+  const min = Math.floor(diffMs / 60000)
+  if (min < 1) return 'agora'
+  if (min < 60) return `há ${min} min`
+  const h = Math.floor(min / 60)
+  if (h < 24) return `há ${h} h`
+  const d = Math.floor(h / 24)
+  if (d < 7) return `há ${d} d`
+  return formatDate(ts)
+}
+
 /** Formata um Timestamp para exibição curta em pt-BR (ex.: 29/06/2026). */
 export function formatDate(ts: Timestamp | null | undefined): string {
   if (!ts) return '—'

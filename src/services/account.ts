@@ -11,9 +11,9 @@ import {
   deleteUser,
   reauthenticateWithCredential,
 } from 'firebase/auth'
-import { deleteDoc, getDocs, query, where } from 'firebase/firestore'
-import { auth } from '@/lib/firebase'
-import { teamsCol, userRef } from './paths'
+import { deleteDoc, getDocs, query, where, writeBatch } from 'firebase/firestore'
+import { auth, db } from '@/lib/firebase'
+import { notificationsCol, teamsCol, userRef } from './paths'
 import { deleteTeam } from './teams'
 
 export async function deleteAccount(password: string): Promise<void> {
@@ -28,6 +28,14 @@ export async function deleteAccount(password: string): Promise<void> {
   const owned = await getDocs(query(teamsCol(), where('ownerId', '==', user.uid)))
   for (const teamDoc of owned.docs) {
     await deleteTeam(teamDoc.id)
+  }
+
+  // Apaga as notificações (subcoleção do usuário) em lotes.
+  const notifs = await getDocs(notificationsCol(user.uid))
+  for (let i = 0; i < notifs.docs.length; i += 450) {
+    const batch = writeBatch(db)
+    for (const d of notifs.docs.slice(i, i + 450)) batch.delete(d.ref)
+    await batch.commit()
   }
 
   // Apaga o doc do usuário e, por fim, a conta de autenticação.

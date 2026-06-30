@@ -3,6 +3,8 @@ import { Link, NavLink, Outlet } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { useOnboardingStore } from '@/store/onboardingStore'
+import { useNotifications } from '@/hooks/useNotifications'
+import { useAppBadge } from '@/hooks/useAppBadge'
 import { OnboardingModal } from '@/components/OnboardingModal'
 
 /** Barra de navegação inferior (mobile-first) + topo com identidade. */
@@ -11,6 +13,8 @@ export function Layout() {
   const online = useOnlineStatus()
   const seen = useOnboardingStore((s) => s.seen)
   const openTutorial = useOnboardingStore((s) => s.openTutorial)
+  const { unread } = useNotifications(user?.uid)
+  useAppBadge(user ? unread : 0)
 
   // Abre o tutorial automaticamente no primeiro acesso (logado).
   useEffect(() => {
@@ -33,6 +37,21 @@ export function Layout() {
           >
             ❔
           </button>
+          {user && (
+            <Link
+              to="/notificacoes"
+              className="btn-ghost relative text-base"
+              aria-label={unread > 0 ? `Notificações (${unread} não lidas)` : 'Notificações'}
+              title="Notificações"
+            >
+              🔔
+              {unread > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                  {unread > 9 ? '9+' : unread}
+                </span>
+              )}
+            </Link>
+          )}
           {user ? (
             <Link to="/conta" className="btn-ghost text-xs">
               ⚙️ Conta

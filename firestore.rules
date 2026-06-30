@@ -51,6 +51,11 @@ service cloud.firestore {
       allow update: if signedIn() && request.auth.uid == userId;
       // Permite excluir o próprio doc (fluxo de exclusão de conta).
       allow delete: if signedIn() && request.auth.uid == userId;
+
+      // Notificações in-app: só o próprio usuário lê/escreve.
+      match /notifications/{notifId} {
+        allow read, write: if signedIn() && request.auth.uid == userId;
+      }
     }
 
     // ── teams ──────────────────────────────────────────────

@@ -13,6 +13,11 @@ import { db } from '@/lib/firebase'
 export const usersCol = () => collection(db, 'users')
 export const userRef = (uid: string): DocumentReference => doc(db, 'users', uid)
 
+export const notificationsCol = (uid: string): CollectionReference =>
+  collection(db, 'users', uid, 'notifications')
+export const notificationRef = (uid: string, id: string): DocumentReference =>
+  doc(db, 'users', uid, 'notifications', id)
+
 export const teamsCol = (): CollectionReference => collection(db, 'teams')
 export const teamRef = (teamId: string): DocumentReference => doc(db, 'teams', teamId)
 
