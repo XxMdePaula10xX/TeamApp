@@ -64,7 +64,7 @@ workflows:
         - firebase
       vars:
         BUNDLE_ID: 'app.clubmanager'
-        APP_STORE_APPLE_ID: 0000000000 # <- troque pelo Apple ID numérico do app
+        APP_STORE_APPLE_ID: 6786035073
         XCODE_WORKSPACE: 'ios/App/App.xcworkspace'
         XCODE_SCHEME: 'App'
       node: 22
