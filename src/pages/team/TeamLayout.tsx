@@ -7,6 +7,7 @@ import { recomputeTeamStats } from '@/services/games'
 import { Avatar } from '@/components/Avatar'
 import { ErrorState, Loading } from '@/components/states'
 import { timeSince } from '@/utils/dates'
+import { publicTeamUrl, shareLink } from '@/utils/share'
 import type { TeamOutletContext } from '@/hooks/useTeamOutlet'
 
 /** Página do time (PRD §7.4) — header + abas. Modo leitura é público. */
@@ -58,6 +59,13 @@ export function TeamLayout() {
     }
   }
 
+  const onShare = async () => {
+    const result = await shareLink(`${team.name} — Pelada Manager`, publicTeamUrl(team.id))
+    if (result === 'copied') setNotice('Link copiado para a área de transferência!')
+    else if (result === 'failed') setNotice('Não foi possível compartilhar o link.')
+    else setNotice(null)
+  }
+
   const context: TeamOutletContext = { team, isOwner }
 
   return (
@@ -70,6 +78,13 @@ export function TeamLayout() {
             <p className="text-xs text-slate-400">No gramado há {timeSince(team.foundedAt)}</p>
           )}
         </div>
+        <button
+          onClick={onShare}
+          className="btn-ghost shrink-0 border border-slate-300 text-xs"
+          aria-label="Compartilhar time"
+        >
+          🔗 Compartilhar
+        </button>
       </div>
 
       {isOwner && (

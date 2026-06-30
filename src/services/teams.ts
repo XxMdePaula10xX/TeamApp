@@ -5,22 +5,49 @@
 import {
   deleteDoc,
   getDocs,
+  limit,
+  orderBy,
+  query,
   serverTimestamp,
   setDoc,
   updateDoc,
+  where,
   writeBatch,
   type Timestamp,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import { normalizeName } from '@/utils/normalize'
+import { normalizeName, PREFIX_HIGH } from '@/utils/normalize'
 import { EMPTY_TEAM_STATS } from '@/utils/stats'
+import type { Team, TeamDoc } from '@/types/models'
 import { competitionsCol, gamesCol, newId, playersCol, teamRef, teamsCol } from './paths'
+
+const SEARCH_LIMIT = 20
+export const SEARCH_MIN_LENGTH = 2
 
 export interface TeamInput {
   name: string
   foundedAt: Timestamp | null
   /** URL já enviada ao Storage (ou '' / a atual ao editar sem trocar). */
   logoURL: string
+}
+
+/**
+ * Busca times por prefixo do nome normalizado (PRD §6/§7.7). Leitura
+ * pública — funciona inclusive para anônimos. Retorna [] para termos
+ * curtos demais.
+ */
+export async function searchTeams(term: string): Promise<Team[]> {
+  const normalized = normalizeName(term)
+  if (normalized.length < SEARCH_MIN_LENGTH) return []
+  const q = query(
+    teamsCol(),
+    where('normalizedName', '>=', normalized),
+    where('normalizedName', '<=', normalized + PREFIX_HIGH),
+    orderBy('normalizedName'),
+    limit(SEARCH_LIMIT),
+  )
+  const snap = await getDocs(q)
+  return snap.docs.map((d) => ({ id: d.id, ...(d.data() as TeamDoc) }))
 }
 
 export async function createTeam(ownerId: string, input: TeamInput): Promise<string> {
