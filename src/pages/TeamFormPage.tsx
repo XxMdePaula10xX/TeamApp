@@ -9,7 +9,9 @@ import { uploadImage } from '@/services/storage'
 import { dateInputToTimestamp, timestampToDateInput } from '@/utils/dates'
 import { Avatar } from '@/components/Avatar'
 import { CityCombobox } from '@/components/CityCombobox'
+import { Jersey } from '@/components/Jersey'
 import { ErrorState, Loading } from '@/components/states'
+import { JERSEY_PATTERNS, JERSEY_PATTERN_LABELS, type JerseyPattern } from '@/types/models'
 
 /** Cores rápidas (hex minúsculo, p/ casar com o valor do input color). */
 const COLOR_PRESETS = ['#16a34a', '#dc2626', '#2563eb', '#0ea5e9', '#f59e0b', '#9333ea', '#0f172a']
@@ -26,6 +28,8 @@ export function TeamFormPage({ mode }: { mode: 'create' | 'edit' }) {
   const [name, setName] = useState('')
   const [foundedAt, setFoundedAt] = useState('')
   const [primaryColor, setPrimaryColor] = useState<string | null>(null)
+  const [secondaryColor, setSecondaryColor] = useState<string | null>(null)
+  const [pattern, setPattern] = useState<JerseyPattern>('SOLID')
   const [city, setCity] = useState<string | null>(null)
   const [phone, setPhone] = useState('')
   const [logoFile, setLogoFile] = useState<File | null>(null)
@@ -44,6 +48,8 @@ export function TeamFormPage({ mode }: { mode: 'create' | 'edit' }) {
       setName(team.name)
       setFoundedAt(timestampToDateInput(team.foundedAt))
       setPrimaryColor(team.primaryColor ?? null)
+      setSecondaryColor(team.secondaryColor ?? null)
+      setPattern(team.pattern ?? 'SOLID')
       setCity(team.city ?? null)
       setPhone(team.phone ?? '')
       setExistingLogo(team.logoURL)
@@ -85,7 +91,15 @@ export function TeamFormPage({ mode }: { mode: 'create' | 'edit' }) {
     try {
       const foundedTs = dateInputToTimestamp(foundedAt)
       const phoneClean = phone.trim() || null
-      const base = { name, foundedAt: foundedTs, primaryColor, city, phone: phoneClean }
+      const base = {
+        name,
+        foundedAt: foundedTs,
+        primaryColor,
+        secondaryColor,
+        pattern,
+        city,
+        phone: phoneClean,
+      }
       const id =
         mode === 'create'
           ? await createTeam(uid, { ...base, logoURL: '' })
@@ -232,6 +246,57 @@ export function TeamFormPage({ mode }: { mode: 'create' | 'edit' }) {
           >
             {primaryColor ? '↺ Usar cor padrão do app' : 'Usando a cor padrão do app'}
           </button>
+        </div>
+
+        <div>
+          <span className="label">Uniforme</span>
+          <div className="flex items-center gap-4">
+            <Jersey
+              primary={primaryColor ?? '#16a34a'}
+              secondary={secondaryColor}
+              pattern={pattern}
+              size={64}
+            />
+            <div className="flex-1 space-y-2">
+              <div className="flex items-center gap-2">
+                <label
+                  className="h-8 w-8 shrink-0 cursor-pointer rounded-lg border border-slate-300"
+                  style={{ backgroundColor: secondaryColor ?? '#ffffff' }}
+                  title="Cor secundária"
+                >
+                  <input
+                    type="color"
+                    className="sr-only"
+                    value={secondaryColor ?? '#ffffff'}
+                    onChange={(e) => setSecondaryColor(e.target.value)}
+                    aria-label="Cor secundária do uniforme"
+                  />
+                </label>
+                <span className="text-xs text-slate-500">Cor secundária</span>
+                {secondaryColor && (
+                  <button
+                    type="button"
+                    onClick={() => setSecondaryColor(null)}
+                    className="text-xs text-slate-400 hover:text-slate-600"
+                  >
+                    limpar
+                  </button>
+                )}
+              </div>
+              <select
+                className="select"
+                value={pattern}
+                onChange={(e) => setPattern(e.target.value as JerseyPattern)}
+                aria-label="Padrão do uniforme"
+              >
+                {JERSEY_PATTERNS.map((p) => (
+                  <option key={p} value={p}>
+                    {JERSEY_PATTERN_LABELS[p]}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
 
         <div>

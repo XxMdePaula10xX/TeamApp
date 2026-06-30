@@ -13,3 +13,13 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <RouterProvider router={router} />
   </React.StrictMode>,
 )
+
+// Remove a splash inicial (definida no index.html) com um fade suave.
+const splash = document.getElementById('splash')
+if (splash) {
+  // Pequeno atraso garante o 1º paint do app antes do fade.
+  setTimeout(() => {
+    splash.classList.add('splash--hidden')
+    splash.addEventListener('transitionend', () => splash.remove(), { once: true })
+  }, 350)
+}

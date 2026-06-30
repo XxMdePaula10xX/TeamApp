@@ -8,6 +8,8 @@ import { useGame } from '@/hooks/useGames'
 import { useIsOwner } from '@/hooks/useIsOwner'
 import { createGame, updateGame, GameValidationError, type GameInput } from '@/services/games'
 import { findCompetitionByName } from '@/services/competitions'
+import { celebrateWin } from '@/utils/celebrate'
+import { playerLabel } from '@/utils/players'
 import { dateInputToTimestamp, timestampToDateInput } from '@/utils/dates'
 import { Loading } from '@/components/states'
 import type { GameEvent, GameType, HomeAway } from '@/types/models'
@@ -248,6 +250,8 @@ export function GameFormPage({ mode }: { mode: 'create' | 'edit' }) {
       } else if (game) {
         await updateGame(teamId, game.id, uid, game, input, players ?? [])
       }
+      // Comemora vitória (confete) ao salvar um novo jogo.
+      if (mode === 'create' && draft.scoreFor > draft.scoreAgainst) void celebrateWin()
       navigate(`/time/${teamId}/jogos`)
     } catch (err) {
       const msg =
@@ -409,7 +413,7 @@ export function GameFormPage({ mode }: { mode: 'create' | 'edit' }) {
                 <option value="">Não-atribuído / contra</option>
                 {roster.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.name}
+                    {playerLabel(p)}
                     {p.active ? '' : ' (inativo)'}
                   </option>
                 ))}
@@ -431,7 +435,7 @@ export function GameFormPage({ mode }: { mode: 'create' | 'edit' }) {
                     .filter((p) => p.id !== goal.playerId)
                     .map((p) => (
                       <option key={p.id} value={p.id}>
-                        🅰 {p.name}
+                        🅰 {playerLabel(p)}
                       </option>
                     ))}
                 </select>
@@ -484,7 +488,7 @@ export function GameFormPage({ mode }: { mode: 'create' | 'edit' }) {
                     }`}
                   >
                     {p.shirtNumber != null ? `${p.shirtNumber} ` : ''}
-                    {p.name}
+                    {playerLabel(p)}
                   </button>
                 )
               })}

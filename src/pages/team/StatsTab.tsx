@@ -12,9 +12,12 @@ import {
   clampTeamStats,
   playerDeltas,
 } from '@/utils/stats'
+import { playerLabel, playerShort } from '@/utils/players'
+import { opponentRecords } from '@/utils/opponents'
 import type { GameType, Player, PlayerStats } from '@/types/models'
 
 const PlayerBars = lazy(() => import('@/components/charts/PlayerBars'))
+const PlayerRadar = lazy(() => import('@/components/charts/PlayerRadar'))
 const ShareCardModal = lazy(() => import('@/components/cards/ShareCardModal'))
 
 interface CardConfig {
@@ -33,13 +36,13 @@ const ChartFallback = () => (
 type Filter = GameType | 'TODOS'
 type Row = { player: Player; stats: PlayerStats }
 
-const firstName = (name: string) => name.trim().split(/\s+/)[0]
-
 /** Aba Estatísticas (PRD §7.4): artilharia, assistências, gols, frequência. */
 export function StatsTab() {
   const { team } = useTeamOutlet()
   const [filter, setFilter] = useState<Filter>('TODOS')
   const [card, setCard] = useState<CardConfig | null>(null)
+  const [cmpA, setCmpA] = useState('')
+  const [cmpB, setCmpB] = useState('')
   const { players, loading: playersLoading, error: playersError } = usePlayers(team.id)
   const { games, loading: gamesLoading } = useGames(team.id, filter === 'TODOS' ? null : filter)
 
@@ -94,6 +97,11 @@ export function StatsTab() {
     [rows],
   )
 
+  const rowsById = useMemo(() => new Map(rows.map((r) => [r.player.id, r])), [rows])
+  const opponents = useMemo(() => opponentRecords(games ?? []), [games])
+  const cmpRowA = cmpA ? rowsById.get(cmpA) : undefined
+  const cmpRowB = cmpB ? rowsById.get(cmpB) : undefined
+
   if (playersLoading || (filter !== 'TODOS' && gamesLoading)) return <Loading />
   if (playersError) return <ErrorState error={playersError} />
 
@@ -143,7 +151,7 @@ export function StatsTab() {
               showAvatars
               data={scorers.slice(0, 10).map((r) => ({
                 id: r.player.id,
-                name: firstName(r.player.name),
+                name: playerShort(r.player),
                 value: r.stats.goals,
                 photo: r.player.photoURL || undefined,
               }))}
@@ -165,13 +173,66 @@ export function StatsTab() {
             <PlayerBars
               data={attendance.slice(0, 12).map((r) => ({
                 id: r.player.id,
-                name: firstName(r.player.name),
+                name: playerShort(r.player),
                 value: r.stats.gamesPlayed,
               }))}
               color="#0ea5e9"
               max={totalGames || undefined}
             />
           </Suspense>
+        </Section>
+      )}
+
+      {(players?.length ?? 0) >= 2 && (
+        <Section title="⚔️ Comparar jogadores">
+          <div className="grid grid-cols-2 gap-2">
+            <PlayerSelect value={cmpA} onChange={setCmpA} players={players ?? []} exclude={cmpB} placeholder="Jogador A" />
+            <PlayerSelect value={cmpB} onChange={setCmpB} players={players ?? []} exclude={cmpA} placeholder="Jogador B" />
+          </div>
+          {cmpRowA && cmpRowB && cmpA !== cmpB ? (
+            <Suspense fallback={<ChartFallback />}>
+              <PlayerRadar
+                a={{
+                  name: playerShort(cmpRowA.player),
+                  goals: cmpRowA.stats.goals,
+                  assists: cmpRowA.stats.assists,
+                  gamesPlayed: cmpRowA.stats.gamesPlayed,
+                }}
+                b={{
+                  name: playerShort(cmpRowB.player),
+                  goals: cmpRowB.stats.goals,
+                  assists: cmpRowB.stats.assists,
+                  gamesPlayed: cmpRowB.stats.gamesPlayed,
+                }}
+              />
+            </Suspense>
+          ) : (
+            <p className="py-4 text-center text-xs text-slate-400">
+              Escolha dois jogadores para comparar.
+            </p>
+          )}
+        </Section>
+      )}
+
+      {opponents.length > 0 && (
+        <Section title="🆚 Retrospecto por adversário">
+          <ul className="divide-y divide-slate-100">
+            {opponents.slice(0, 15).map((o) => {
+              const diff = o.goalsFor - o.goalsAgainst
+              return (
+                <li key={o.opponent} className="flex items-center gap-2 py-2 text-sm">
+                  <span className="min-w-0 flex-1 truncate text-slate-800">{o.opponent}</span>
+                  <span className="text-xs text-slate-400">{o.played}j</span>
+                  <span className="font-bold text-pitch-600">{o.wins}V</span>
+                  <span className="font-bold text-slate-500">{o.draws}E</span>
+                  <span className="font-bold text-red-500">{o.losses}D</span>
+                  <span className="w-9 text-right text-xs text-slate-400">
+                    {diff > 0 ? `+${diff}` : diff}
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
         </Section>
       )}
 
@@ -187,7 +248,7 @@ export function StatsTab() {
                     emoji: '🥇',
                     rows: scorers.slice(0, 5).map((r, i) => ({
                       rank: i + 1,
-                      name: r.player.name,
+                      name: playerLabel(r.player),
                       value: r.stats.goals,
                       unit: r.stats.goals === 1 ? 'gol' : 'gols',
                     })),
@@ -233,11 +294,11 @@ export function StatsTab() {
   function buildHighlightsCard(): CardConfig {
     const rows: StatCardRow[] = []
     if (scorers[0])
-      rows.push({ label: 'Artilheiro', name: scorers[0].player.name, value: scorers[0].stats.goals, unit: scorers[0].stats.goals === 1 ? 'gol' : 'gols' })
+      rows.push({ label: 'Artilheiro', name: playerLabel(scorers[0].player), value: scorers[0].stats.goals, unit: scorers[0].stats.goals === 1 ? 'gol' : 'gols' })
     if (assisters[0])
-      rows.push({ label: 'Garçom', name: assisters[0].player.name, value: assisters[0].stats.assists, unit: 'assist.' })
+      rows.push({ label: 'Garçom', name: playerLabel(assisters[0].player), value: assisters[0].stats.assists, unit: 'assist.' })
     if (attendance[0])
-      rows.push({ label: 'Presença', name: attendance[0].player.name, value: attendance[0].stats.gamesPlayed, unit: attendance[0].stats.gamesPlayed === 1 ? 'jogo' : 'jogos' })
+      rows.push({ label: 'Presença', name: playerLabel(attendance[0].player), value: attendance[0].stats.gamesPlayed, unit: attendance[0].stats.gamesPlayed === 1 ? 'jogo' : 'jogos' })
     return { title: 'Destaques', emoji: '⭐', rows, filename: `destaques-${slug(team.normalizedName)}.png`, note: filterLabel }
   }
 }
@@ -273,8 +334,8 @@ function RankList({
         return (
           <li key={r.player.id} className="flex items-center gap-3 py-2">
             <span className="w-5 text-center text-sm font-bold text-slate-400">{rank}</span>
-            <Avatar src={r.player.photoURL || undefined} name={r.player.name} size={32} />
-            <span className="min-w-0 flex-1 truncate text-sm text-slate-800">{r.player.name}</span>
+            <Avatar src={r.player.photoURL || undefined} name={playerLabel(r.player)} size={32} />
+            <span className="min-w-0 flex-1 truncate text-sm text-slate-800">{playerLabel(r.player)}</span>
             <span className="text-sm font-bold text-slate-900">
               {value} <span className="text-xs font-normal text-slate-400">{unit}{value > 1 ? 's' : ''}</span>
             </span>
@@ -287,6 +348,33 @@ function RankList({
         </li>
       )}
     </ul>
+  )
+}
+
+function PlayerSelect({
+  value,
+  onChange,
+  players,
+  exclude,
+  placeholder,
+}: {
+  value: string
+  onChange: (id: string) => void
+  players: Player[]
+  exclude: string
+  placeholder: string
+}) {
+  return (
+    <select className="select" value={value} onChange={(e) => onChange(e.target.value)}>
+      <option value="">{placeholder}</option>
+      {players
+        .filter((p) => p.id !== exclude)
+        .map((p) => (
+          <option key={p.id} value={p.id}>
+            {playerLabel(p)}
+          </option>
+        ))}
+    </select>
   )
 }
 

@@ -28,6 +28,7 @@ export function PlayerFormPage({ mode }: { mode: 'create' | 'edit' }) {
   const { players } = usePlayers(mode === 'edit' ? teamId : undefined)
 
   const [name, setName] = useState('')
+  const [nickname, setNickname] = useState('')
   const [shirt, setShirt] = useState('')
   const [position, setPosition] = useState<Position>('MEI')
   const [foot, setFoot] = useState<PreferredFoot>('DIREITO')
@@ -46,6 +47,7 @@ export function PlayerFormPage({ mode }: { mode: 'create' | 'edit' }) {
       if (p) {
         hydrated.current = true
         setName(p.name)
+        setNickname(p.nickname ?? '')
         setShirt(p.shirtNumber != null ? String(p.shirtNumber) : '')
         setPosition(p.position)
         setFoot(p.preferredFoot)
@@ -93,6 +95,7 @@ export function PlayerFormPage({ mode }: { mode: 'create' | 'edit' }) {
     try {
       const input = {
         name,
+        nickname: nickname.trim() || null,
         shirtNumber,
         position,
         preferredFoot: foot,
@@ -151,6 +154,23 @@ export function PlayerFormPage({ mode }: { mode: 'create' | 'edit' }) {
             maxLength={60}
             required
           />
+        </div>
+
+        <div>
+          <label className="label" htmlFor="pnick">
+            Apelido <span className="font-normal text-slate-400">(opcional)</span>
+          </label>
+          <input
+            id="pnick"
+            className="input"
+            value={nickname}
+            onChange={(e) => setNickname(e.target.value)}
+            maxLength={30}
+            placeholder="Como ele é chamado na pelada"
+          />
+          <p className="mt-1 text-xs text-slate-500">
+            Se preenchido, aparece nos rankings, gráficos e cards no lugar do nome.
+          </p>
         </div>
 
         <div className="grid grid-cols-2 gap-3">

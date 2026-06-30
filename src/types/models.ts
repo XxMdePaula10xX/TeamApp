@@ -43,6 +43,18 @@ export type GameResult = 'VITORIA' | 'EMPATE' | 'DERROTA'
 
 export type GameEventType = 'GOL' | 'ASSIST'
 
+/** Padrão visual do uniforme (escudo/jersey). */
+export type JerseyPattern = 'SOLID' | 'STRIPES' | 'HOOPS' | 'SASH'
+
+export const JERSEY_PATTERNS: readonly JerseyPattern[] = ['SOLID', 'STRIPES', 'HOOPS', 'SASH']
+
+export const JERSEY_PATTERN_LABELS: Record<JerseyPattern, string> = {
+  SOLID: 'Liso',
+  STRIPES: 'Listras verticais',
+  HOOPS: 'Listras horizontais',
+  SASH: 'Faixa diagonal',
+}
+
 // ── Agregados (denormalizados) ───────────────────────────────
 
 export interface TeamStats {
@@ -95,6 +107,10 @@ export interface TeamDoc {
   logoURL: string
   /** Cor primária do time (hex, ex.: '#dc2626') ou null = cor padrão do app. */
   primaryColor: string | null
+  /** Cor secundária do uniforme (hex) ou null. */
+  secondaryColor: string | null
+  /** Padrão do uniforme/escudo. */
+  pattern: JerseyPattern
   /** Cidade no formato "Cidade - UF" (escolhida de lista) ou null. */
   city: string | null
   /** Telefone de contato p/ marcar amistosos/treinos (texto livre) ou null. */
@@ -107,6 +123,8 @@ export interface TeamDoc {
 
 export interface PlayerDoc {
   name: string
+  /** Apelido (cultura de pelada); exibido nos rankings/cards quando houver. */
+  nickname: string | null
   photoURL: string
   shirtNumber: number | null
   position: Position

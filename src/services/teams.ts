@@ -18,7 +18,7 @@ import {
 import { db } from '@/lib/firebase'
 import { normalizeName, PREFIX_HIGH } from '@/utils/normalize'
 import { EMPTY_TEAM_STATS } from '@/utils/stats'
-import type { Team, TeamDoc } from '@/types/models'
+import type { JerseyPattern, Team, TeamDoc } from '@/types/models'
 import { competitionsCol, gamesCol, newId, playersCol, teamRef, teamsCol } from './paths'
 
 const SEARCH_LIMIT = 20
@@ -31,6 +31,10 @@ export interface TeamInput {
   logoURL: string
   /** Cor primária do time (hex) ou null = cor padrão do app. */
   primaryColor: string | null
+  /** Cor secundária do uniforme (hex) ou null. */
+  secondaryColor: string | null
+  /** Padrão do uniforme/escudo. */
+  pattern: JerseyPattern
   /** Cidade "Cidade - UF" (da lista) ou null. */
   city: string | null
   /** Telefone de contato (amistosos/treinos) ou null. */
@@ -63,6 +67,8 @@ export async function createTeam(ownerId: string, input: TeamInput): Promise<str
     normalizedName: normalizeName(input.name),
     logoURL: input.logoURL,
     primaryColor: input.primaryColor,
+    secondaryColor: input.secondaryColor,
+    pattern: input.pattern,
     city: input.city,
     phone: input.phone,
     foundedAt: input.foundedAt,
@@ -79,6 +85,8 @@ export async function updateTeam(teamId: string, input: TeamInput): Promise<void
     normalizedName: normalizeName(input.name),
     logoURL: input.logoURL,
     primaryColor: input.primaryColor,
+    secondaryColor: input.secondaryColor,
+    pattern: input.pattern,
     city: input.city,
     phone: input.phone,
     foundedAt: input.foundedAt,

@@ -11,6 +11,7 @@ import { GameFormPage } from '@/pages/GameFormPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { TeamLayout } from '@/pages/team/TeamLayout'
 import { OverviewTab } from '@/pages/team/OverviewTab'
+import { ResenhaTab } from '@/pages/team/ResenhaTab'
 import { SquadTab } from '@/pages/team/SquadTab'
 import { GamesTab } from '@/pages/team/GamesTab'
 import { StatsTab } from '@/pages/team/StatsTab'
@@ -68,6 +69,7 @@ export const router = createBrowserRouter([
           { path: 'elenco', element: <SquadTab /> },
           { path: 'jogos', element: <GamesTab /> },
           { path: 'estatisticas', element: <StatsTab /> },
+          { path: 'resenha', element: <ResenhaTab /> },
         ],
       },
 

@@ -5,6 +5,7 @@ import { useIsOwner } from '@/hooks/useIsOwner'
 import { useTeamTheme } from '@/hooks/useTeamTheme'
 import { useThemeStore } from '@/store/themeStore'
 import { Avatar } from '@/components/Avatar'
+import { Jersey } from '@/components/Jersey'
 import { ErrorState, Loading } from '@/components/states'
 import { timeSince } from '@/utils/dates'
 import { publicTeamUrl, shareLink } from '@/utils/share'
@@ -53,6 +54,14 @@ export function TeamLayout() {
             <p className="text-xs text-slate-400">No gramado há {timeSince(team.foundedAt)}</p>
           )}
         </div>
+        {(team.secondaryColor || (team.pattern && team.pattern !== 'SOLID')) && (
+          <Jersey
+            primary={team.primaryColor ?? '#16a34a'}
+            secondary={team.secondaryColor}
+            pattern={team.pattern ?? 'SOLID'}
+            size={44}
+          />
+        )}
         <button
           onClick={onShare}
           className="btn-ghost shrink-0 border border-slate-300 text-xs"
@@ -103,6 +112,7 @@ export function TeamLayout() {
         <TeamTab to={`/time/${team.id}/elenco`} label="Elenco" />
         <TeamTab to={`/time/${team.id}/jogos`} label="Jogos" />
         <TeamTab to={`/time/${team.id}/estatisticas`} label="Estatísticas" />
+        <TeamTab to={`/time/${team.id}/resenha`} label="Resenha" />
       </nav>
 
       <Outlet context={context} />

@@ -10,6 +10,7 @@ import { newId, playerRef, playersCol } from './paths'
 
 export interface PlayerInput {
   name: string
+  nickname: string | null
   shirtNumber: number | null
   position: Position
   preferredFoot: PreferredFoot
@@ -26,6 +27,7 @@ export async function addPlayer(
   const id = newId(playersCol(teamId))
   await setDoc(playerRef(teamId, id), {
     name: input.name.trim(),
+    nickname: input.nickname,
     photoURL: input.photoURL,
     shirtNumber: input.shirtNumber,
     position: input.position,
@@ -46,6 +48,7 @@ export async function updatePlayer(
 ): Promise<void> {
   await updateDoc(playerRef(teamId, playerId), {
     name: input.name.trim(),
+    nickname: input.nickname,
     photoURL: input.photoURL,
     shirtNumber: input.shirtNumber,
     position: input.position,
