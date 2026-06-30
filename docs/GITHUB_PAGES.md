@@ -9,7 +9,7 @@ build do Pages pelo workflow `.github/workflows/pages.yml`.
 > saem com o `#` automaticamente.
 
 ## 1. Criar o repositório público
-1. No GitHub: **New repository** → nome (ex.: `peladamanager`) → **Public** → *Create*.
+1. No GitHub: **New repository** → nome (ex.: `clubmanager`) → **Public** → *Create*.
 2. Não precisa adicionar README/license.
 
 ## 2. Enviar o código para o novo repositório

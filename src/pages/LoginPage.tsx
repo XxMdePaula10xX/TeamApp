@@ -79,7 +79,7 @@ export function LoginPage() {
         <div className="text-5xl" aria-hidden>
           ⚽
         </div>
-        <h1 className="mt-2 text-2xl font-extrabold tracking-tight text-pitch-700">Pelada Manager</h1>
+        <h1 className="mt-2 text-2xl font-extrabold tracking-tight text-pitch-700">Club Manager</h1>
         <p className="mt-1 text-sm text-slate-500">
           Artilharia, assistências e aproveitamento do seu fut.
         </p>

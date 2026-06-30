@@ -1,4 +1,4 @@
-# ⚽ Pelada Manager
+# ⚽ Club Manager
 
 Gestor de times amadores de futebol. Cadastre times, jogadores e jogos com
 gols/assistências individuais, e acompanhe **artilharia, assistências,
@@ -71,7 +71,7 @@ npx cap add ios          # idem iOS (requer macOS)
 npx cap sync             # copia o build web para os projetos nativos
 ```
 
-App id: `app.peladamanager`. A publicação é feita via **Codemagic**
+App id: `app.clubmanager`. A publicação é feita via **Codemagic**
 (`codemagic.yaml`) — configure os grupos de variáveis `firebase`,
 `google_play` e `appstore` no painel do Codemagic.
 

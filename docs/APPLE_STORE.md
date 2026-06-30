@@ -1,7 +1,7 @@
-# Publicar na App Store (iOS) — Pelada Manager
+# Publicar na App Store (iOS) — Club Manager
 
 Guia para subir o app na App Store usando **Codemagic** (Mac na nuvem) —
-você **não precisa de um Mac**. App id: **`app.peladamanager`**.
+você **não precisa de um Mac**. App id: **`app.clubmanager`**.
 
 ## 0. Custos e pré-requisitos (uma vez)
 - [ ] **Apple Developer Program** — **US$ 99/ano** (https://developer.apple.com/programs/). Obrigatório.
@@ -10,8 +10,8 @@ você **não precisa de um Mac**. App id: **`app.peladamanager`**.
 
 ## 1. App Store Connect — criar o app
 1. https://appstoreconnect.apple.com → **Meus Apps** → **+** → **Novo app**.
-2. Plataforma **iOS**, nome **Pelada Manager**, idioma **Português (Brasil)**.
-3. **Bundle ID**: `app.peladamanager`. (Se não aparecer na lista, registre antes em
+2. Plataforma **iOS**, nome **Club Manager**, idioma **Português (Brasil)**.
+3. **Bundle ID**: `app.clubmanager`. (Se não aparecer na lista, registre antes em
    *Certificates, Identifiers & Profiles → Identifiers → +* — ou deixe a
    assinatura automática do Codemagic criar com `--create`.)
 4. Depois de criado, anote o **Apple ID numérico** do app

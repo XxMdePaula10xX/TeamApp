@@ -1,5 +1,5 @@
 /**
- * Modelo de dados — Pelada Manager (Firestore).
+ * Modelo de dados — Club Manager (Firestore).
  *
  * Reflete a estrutura de coleções do PRD §6. Documentos são
  * desnormalizados (agregados embutidos) para leitura pública barata.

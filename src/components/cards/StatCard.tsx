@@ -34,7 +34,7 @@ export function StatCard({ teamName, title, emoji, rows, note }: StatCardProps) 
         </div>
         <div className="min-w-0">
           <p className="truncate text-lg font-extrabold leading-tight">{teamName}</p>
-          <p className="text-xs text-pitch-200">⚽ Pelada Manager</p>
+          <p className="text-xs text-pitch-200">⚽ Club Manager</p>
         </div>
       </div>
 

@@ -28,7 +28,7 @@ const firebaseConfig = {
 // Aviso amigável em dev quando o `.env` ainda não foi preenchido.
 if (import.meta.env.DEV && (!firebaseConfig.apiKey || firebaseConfig.apiKey === 'your-api-key')) {
   console.warn(
-    '[Pelada Manager] Firebase não configurado. Copie `.env.example` para `.env` e ' +
+    '[Club Manager] Firebase não configurado. Copie `.env.example` para `.env` e ' +
       'preencha as credenciais VITE_FIREBASE_* do seu projeto.',
   )
 }

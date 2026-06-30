@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import path from 'node:path'
 
 // https://vite.dev/config/
-// `base` vem de VITE_BASE (ex.: "/peladamanager/" no GitHub Pages); default "/"
+// `base` vem de VITE_BASE (ex.: "/clubmanager/" no GitHub Pages); default "/"
 // para Firebase Hosting / dev.
 export default defineConfig({
   base: process.env.VITE_BASE ?? '/',

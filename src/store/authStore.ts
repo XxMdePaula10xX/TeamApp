@@ -52,7 +52,7 @@ export function initAuthListener(): () => void {
     // Garante o doc users/{uid} no primeiro login (fire-and-forget).
     if (user) {
       void ensureUserDoc(user).catch((err) => {
-        console.warn('[Pelada Manager] Falha ao criar/atualizar o doc do usuário:', err)
+        console.warn('[Club Manager] Falha ao criar/atualizar o doc do usuário:', err)
       })
     }
   })

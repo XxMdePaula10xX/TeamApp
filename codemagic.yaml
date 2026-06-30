@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────────
-# Codemagic CI/CD — Pelada Manager (Vite + React + Capacitor)
+# Codemagic CI/CD — Club Manager (Vite + React + Capacitor)
 #
 # Pré-requisitos a configurar no Codemagic:
 #   - Grupo de variáveis `firebase` com as VITE_FIREBASE_* (build web).
@@ -63,7 +63,7 @@ workflows:
       groups:
         - firebase
       vars:
-        BUNDLE_ID: 'app.peladamanager'
+        BUNDLE_ID: 'app.clubmanager'
         APP_STORE_APPLE_ID: 0000000000 # <- troque pelo Apple ID numérico do app
         XCODE_WORKSPACE: 'ios/App/App.xcworkspace'
         XCODE_SCHEME: 'App'

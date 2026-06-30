@@ -1,4 +1,4 @@
-# Checklist de publicação — Pelada Manager
+# Checklist de publicação — Club Manager
 
 Guia para levar o app às lojas via **Capacitor + Codemagic**.
 
@@ -21,7 +21,7 @@ npx cap add ios               # 1ª vez (requer macOS)
 npx cap sync                  # a cada build web
 ```
 
-- App id: **`app.peladamanager`** (definido em `capacitor.config.ts`).
+- App id: **`app.clubmanager`** (definido em `capacitor.config.ts`).
 - Ícones/splash: gerar com `@capacitor/assets` antes do build de release.
 
 ## 3. Codemagic

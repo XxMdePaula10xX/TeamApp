@@ -1,7 +1,7 @@
 rules_version = '2';
 
 // ─────────────────────────────────────────────────────────────
-// Regras do Firebase Storage — Pelada Manager
+// Regras do Firebase Storage — Club Manager
 //
 // Imagens (logos, fotos) são públicas para leitura. O UPLOAD é
 // prefixado pelo uid do dono no próprio caminho — assim um usuário não

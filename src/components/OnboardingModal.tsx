@@ -14,7 +14,7 @@ interface Step {
 const STEPS: Step[] = [
   {
     emoji: '⚽',
-    title: 'Bem-vindo ao Pelada Manager!',
+    title: 'Bem-vindo ao Club Manager!',
     body: 'Transforme a planilha da pelada num painel: artilharia, assistências, presença e aproveitamento — igual time profissional.',
   },
   {

@@ -1,7 +1,7 @@
 rules_version = '2';
 
 // ─────────────────────────────────────────────────────────────
-// Regras de segurança — Pelada Manager
+// Regras de segurança — Club Manager
 //
 // Modelo: leitura PÚBLICA (qualquer um vê estatísticas), escrita
 // restrita ao DONO. A autorização das subcoleções usa `ownerId`

@@ -39,7 +39,7 @@ export function TeamLayout() {
     )
 
   const onShare = async () => {
-    const result = await shareLink(`${team.name} — Pelada Manager`, publicTeamUrl(team.id))
+    const result = await shareLink(`${team.name} — Club Manager`, publicTeamUrl(team.id))
     if (result === 'copied') setNotice('Link copiado para a área de transferência!')
     else if (result === 'failed') setNotice('Não foi possível compartilhar o link.')
     else setNotice(null)
@@ -131,7 +131,7 @@ export function TeamLayout() {
 
       {qrOpen && (
         <Suspense fallback={null}>
-          <QrModal url={publicTeamUrl(team.id)} title={`${team.name} — Pelada Manager`} onClose={() => setQrOpen(false)} />
+          <QrModal url={publicTeamUrl(team.id)} title={`${team.name} — Club Manager`} onClose={() => setQrOpen(false)} />
         </Suspense>
       )}
     </div>

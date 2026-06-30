@@ -26,7 +26,7 @@ export function Layout() {
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur">
         <Link to="/" className="flex items-center gap-2 font-extrabold tracking-tight text-pitch-700">
           <span aria-hidden>⚽</span>
-          Pelada Manager
+          Club Manager
         </Link>
         <div className="flex items-center gap-1">
           <button
