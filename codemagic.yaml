@@ -76,6 +76,12 @@ workflows:
       - name: Adicionar plataforma iOS (se ausente)
         script: |
           [ -d ios ] || npx cap add ios
+      - name: Declarar isencao de criptografia (HTTPS/TLS padrao)
+        script: |
+          set -e
+          PLIST=ios/App/App/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" "$PLIST" \
+            || /usr/libexec/PlistBuddy -c "Set :ITSAppUsesNonExemptEncryption false" "$PLIST"
       - name: Gerar ícones/splash
         script: |
           npx @capacitor/assets@latest generate --ios || echo "Sem assets/icon.png — usando ícone padrão."
