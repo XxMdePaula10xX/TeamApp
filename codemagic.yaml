@@ -81,14 +81,25 @@ workflows:
           npx @capacitor/assets@latest generate --ios || echo "Sem assets/icon.png — usando ícone padrão."
       - name: Capacitor sync (instala os Pods)
         script: npx cap sync ios
-      - name: Assinatura automática (App Store Connect)
+      # Assinatura dividida em passos: assim, se algo falhar (ex.: a chave de API
+      # nao tem permissao para criar certificado/perfil), o build PARA no comando
+      # culpado com o erro real — em vez de seguir e quebrar so no build-ipa.
+      - name: Inicializar keychain
+        script: keychain initialize
+      - name: Buscar/criar certificado + perfil (App Store Connect)
         script: |
-          keychain initialize
-          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create
-          keychain add-certificates
-          xcode-project use-profiles
+          set -ex
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --platform IOS \
+            --type IOS_APP_STORE \
+            --create
+      - name: Adicionar certificados ao keychain
+        script: keychain add-certificates
+      - name: Aplicar perfis ao projeto Xcode
+        script: xcode-project use-profiles
       - name: Incrementar build number
         script: |
+          set -e
           LATEST=$(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo 0)
           cd ios/App
           agvtool new-version -all $((LATEST + 1))
