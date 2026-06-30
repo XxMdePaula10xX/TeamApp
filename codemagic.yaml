@@ -47,18 +47,18 @@ workflows:
       - android/app/build/outputs/**/*.aab
 
   # ── iOS — App Store (assinatura automática + TestFlight) ──
-  # PRÉ-REQUISITOS (configurar no painel do Codemagic, ver docs/APPLE_STORE.md):
-  #   1. Integração App Store Connect (chave da API) — troque CODEMAGIC_ASC_KEY
-  #      pelo NOME que você deu à integração.
-  #   2. Variável APP_STORE_APPLE_ID = o "Apple ID" numérico do app
-  #      (App Store Connect > seu app > App Information).
+  # PRÉ-REQUISITOS (no painel do Codemagic, ver docs/APPLE_STORE.md):
+  #   1. Integração App Store Connect — usando a chave "quantum_asc" já
+  #      existente (Team settings > Integrations > Apple Developer Portal).
+  #      Se preferir a outra ("CatMatch API Key"), troque o nome abaixo.
+  #   2. Grupo de variáveis `firebase` com as VITE_FIREBASE_*.
   #   3. assets/icon.png (1024x1024) commitado, para gerar o ícone.
   ios-appstore:
     name: iOS — App Store
     instance_type: mac_mini_m2
     max_build_duration: 90
     integrations:
-      app_store_connect: CODEMAGIC_ASC_KEY
+      app_store_connect: quantum_asc
     environment:
       groups:
         - firebase
