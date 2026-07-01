@@ -20,6 +20,11 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
+    // O app tem alvo iOS 13 (IPHONEOS_DEPLOYMENT_TARGET=13.0). Sem definir
+    // target, o Vite deixaria `??`/`?.` crus (ES2020) no bundle, e o WebKit
+    // do iOS 13.0–13.3 lança SyntaxError no parse → tela branca. Transpila
+    // para baixo cobrindo Safari 13.0.
+    target: ['es2019', 'safari13'],
     rollupOptions: {
       output: {
         manualChunks: {

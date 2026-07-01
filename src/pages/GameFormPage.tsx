@@ -133,7 +133,7 @@ export function GameFormPage({ mode }: { mode: 'create' | 'edit' }) {
   const { team, loading: teamLoading } = useTeam(teamId)
   const { isOwner, ready } = useIsOwner(team, teamLoading)
   const { players, loading: playersLoading } = usePlayers(teamId)
-  const { competitions } = useCompetitions(teamId)
+  const { competitions, loading: compsLoading } = useCompetitions(teamId)
   const { game, loading: gameLoading } = useGame(teamId, mode === 'edit' ? gameId : undefined)
 
   const [draft, dispatch] = useReducer(reducer, undefined, initialDraft)
@@ -187,7 +187,15 @@ export function GameFormPage({ mode }: { mode: 'create' | 'edit' }) {
 
   // Aguarda players carregar: o roster e a validação dependem dele (sem
   // isso o submit poderia rodar com elenco vazio e perder increments).
-  if (teamLoading || playersLoading || (mode === 'edit' && gameLoading)) return <Loading />
+  // Em edição, aguarda também as competições: a hidratação só ocorre quando
+  // `game` E `competitions` chegam; sem esse gate o form pisca vazio e o
+  // HYDRATE posterior sobrescreveria o que o usuário já tivesse digitado.
+  if (
+    teamLoading ||
+    playersLoading ||
+    (mode === 'edit' && (gameLoading || compsLoading))
+  )
+    return <Loading />
   if (ready && !isOwner)
     return <p className="text-sm text-slate-500">Você não tem permissão para editar jogos deste time.</p>
 
@@ -261,6 +269,12 @@ export function GameFormPage({ mode }: { mode: 'create' | 'edit' }) {
         }).catch(() => {})
       } else if (game) {
         await updateGame(teamId, game.id, uid, game, input, players ?? [])
+      } else {
+        // Modo edição, mas o jogo sumiu (excluído em outro aparelho ou
+        // permissão revogada). Não navega como se tivesse salvo.
+        setError('Não foi possível carregar o jogo para salvar. Volte e tente de novo.')
+        setBusy(false)
+        return
       }
       navigate(`/time/${teamId}/jogos`)
     } catch (err) {

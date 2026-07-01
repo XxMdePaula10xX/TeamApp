@@ -121,12 +121,15 @@ export function LoginPage() {
       <div className="flex flex-col items-center gap-2 text-sm">
         {mode === 'signin' && (
           <>
-            <button onClick={() => switchMode('reset')} className="font-medium text-slate-500 hover:text-slate-700">
+            <button
+              onClick={() => switchMode('reset')}
+              className="px-3 py-2 font-medium text-slate-500 hover:text-slate-700"
+            >
               Esqueci minha senha
             </button>
             <p className="text-slate-500">
               Não tem conta?{' '}
-              <button onClick={() => switchMode('signup')} className="font-semibold text-pitch-700">
+              <button onClick={() => switchMode('signup')} className="inline-block px-1 py-2 font-semibold text-pitch-700">
                 Criar conta
               </button>
             </p>
@@ -135,13 +138,16 @@ export function LoginPage() {
         {mode === 'signup' && (
           <p className="text-slate-500">
             Já tem conta?{' '}
-            <button onClick={() => switchMode('signin')} className="font-semibold text-pitch-700">
+            <button onClick={() => switchMode('signin')} className="inline-block px-1 py-2 font-semibold text-pitch-700">
               Entrar
             </button>
           </p>
         )}
         {mode === 'reset' && (
-          <button onClick={() => switchMode('signin')} className="font-medium text-pitch-700">
+          <button
+            onClick={() => switchMode('signin')}
+            className="px-3 py-2 font-medium text-pitch-700"
+          >
             ← Voltar para entrar
           </button>
         )}
