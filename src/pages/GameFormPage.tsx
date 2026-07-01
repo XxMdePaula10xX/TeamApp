@@ -9,6 +9,7 @@ import { useIsOwner } from '@/hooks/useIsOwner'
 import { createGame, updateGame, GameValidationError, type GameInput } from '@/services/games'
 import { findCompetitionByName } from '@/services/competitions'
 import { celebrateWin } from '@/utils/celebrate'
+import { uid as genUid } from '@/utils/id'
 import { playerLabel } from '@/utils/players'
 import { notifyGameSaved } from '@/services/notifications'
 import { dateInputToTimestamp, timestampToDateInput } from '@/utils/dates'
@@ -94,7 +95,7 @@ function reducer(state: Draft, action: Action): Draft {
     case 'ADD_GOAL':
       return {
         ...state,
-        goals: [...state.goals, { uid: crypto.randomUUID(), playerId: null, assistPlayerId: null }],
+        goals: [...state.goals, { uid: genUid(), playerId: null, assistPlayerId: null }],
       }
     case 'UPDATE_GOAL': {
       let presentPlayerIds = state.presentPlayerIds
@@ -158,7 +159,7 @@ export function GameFormPage({ mode }: { mode: 'create' | 'edit' }) {
         goals: game.events
           .filter((e) => e.type === 'GOL' && e.playerId)
           .map((e) => ({
-            uid: crypto.randomUUID(),
+            uid: genUid(),
             playerId: e.playerId,
             assistPlayerId: e.assistPlayerId,
           })),
