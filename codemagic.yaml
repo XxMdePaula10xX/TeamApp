@@ -110,9 +110,17 @@ workflows:
       - name: Incrementar build number
         script: |
           set -e
-          LATEST=$(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo 0)
+          # Usa o TestFlight (pre-release), nao a App Store publicada: builds
+          # ainda nao lancados vivem no TestFlight. Pega o maior entre
+          # (ultima build do TestFlight + 1) e o contador do Codemagic
+          # ($BUILD_NUMBER), garantindo um numero unico e sempre crescente.
+          TF=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo 0)
+          TF=${TF:-0}
+          NEXT=$((TF + 1))
+          if [ "${BUILD_NUMBER:-0}" -gt "$NEXT" ]; then NEXT=$BUILD_NUMBER; fi
+          echo "TestFlight=$TF Codemagic=${BUILD_NUMBER:-0} -> build number = $NEXT"
           cd ios/App
-          agvtool new-version -all $((LATEST + 1))
+          agvtool new-version -all "$NEXT"
       - name: Build do .ipa (release)
         script: |
           xcode-project build-ipa \
